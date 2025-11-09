@@ -78,3 +78,26 @@ func InsertLog(ctx context.Context, db *pgx.Conn, log LogEntry) error {
 	
 	return nil
 }
+
+func GetLogs(ctx context.Context, db *pgx.Conn) ([]LogEntry, error) { 
+
+	getSQL := `SELECT * FROM logs`
+
+	rows, err := db.Query(ctx, getSQL)
+	if err != nil {
+	return nil,	fmt.Errorf("failed to get logs: %w", err)
+	}
+	defer rows.Close();
+
+	var logs []LogEntry
+	for rows.Next() {
+		var log LogEntry
+		err := rows.Scan(&log.Level, &log.Message, &log.Service)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan log: %w", err)
+		}
+		logs = append(logs, log)
+	}
+	
+	return logs, nil
+}

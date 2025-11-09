@@ -30,8 +30,8 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 	apiv1 := router.Group("/api/v1")
 	{
 		apiv1.POST("/log", s.handleLogIngest)
+		apiv1.GET("/log", s.handleGetLogs)
 	}
-
 }
 
 func (s *Server) handleLogIngest(c *gin.Context) {
@@ -53,4 +53,19 @@ func (s *Server) handleLogIngest(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"message": "log received!"})
+}
+
+func (s *Server) handleGetLogs(c *gin.Context)  {
+
+	ctx := c.Request.Context()
+	logs, err := database.GetLogs(ctx, s.db)
+	if err != nil {
+		fmt.Printf("Failed to get logs: %v\n", err)
+
+		c.JSON(500, gin.H{"error": "internal server error"})
+		return
+	}
+
+	c.JSON(200, gin.H{"logs": logs})
+
 }
