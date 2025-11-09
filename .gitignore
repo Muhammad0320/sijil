@@ -1,0 +1,10 @@
+# Environment variables
+# Ignore this file, as it contains sensitive secrets.
+.env
+
+# Go build artifacts
+# Ignore the compiled executables for our 'api' and 'client'
+api.exe
+api
+client.exe
+client
