@@ -81,16 +81,21 @@ func InsertLog(ctx context.Context, db *pgx.Conn, log LogEntry) error {
 	return nil
 }
 
-func GetLogs(ctx context.Context, db *pgx.Conn) ([]LogEntry, error) { 
+func GetLogs(ctx context.Context, db *pgx.Conn, limit int, offset int) ([]LogEntry, error) { 
 
-	getSQL := `SELECT * FROM logs`
+	getSQL := `SELECT timestamp, level, message, service
+	 FROM logs
+	 ORDER BY timestamp DESC 
+	LIMIT $1
+	OFFSET $2;
+	`;
 
-	rows, err := db.Query(ctx, getSQL)
+	rows, err := db.Query(ctx, getSQL, limit, offset)
 	if err != nil {
 	return nil,	fmt.Errorf("failed to get logs: %w", err)
 	}
 	defer rows.Close();
-
+ 
 	var logs []LogEntry
 	for rows.Next() {
 		var log LogEntry

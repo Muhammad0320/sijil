@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"log-engine/internals/database"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -57,8 +58,20 @@ func (s *Server) handleLogIngest(c *gin.Context) {
 
 func (s *Server) handleGetLogs(c *gin.Context)  {
 
+	limitString := c.DefaultQuery("limit", "100")
+	limit, err := strconv.Atoi(limitString)
+   if err != nil || limit < 1 {
+	limit = 100
+   }
+
+   offsetString := c.DefaultQuery("offset", "0")
+   offset, err := strconv.Atoi(offsetString)
+   if err != nil || offset < 0 {
+	offset = 0
+   }
+
 	ctx := c.Request.Context()
-	logs, err := database.GetLogs(ctx, s.db)
+	logs, err := database.GetLogs(ctx, s.db, limit, offset)
 	if err != nil {
 		fmt.Printf("Failed to get logs: %v\n", err)
 
