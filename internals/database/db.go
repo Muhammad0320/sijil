@@ -73,7 +73,7 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 	  			END;
 				$$ LANGUAGE plpgsql
 	  `
-	  _, err = db.Exec(ctx, createFunctionSQL)
+	  _, err = db.Exec(ctx, createFunctionSQL);
 	  if err != nil {
 		return  fmt.Errorf("failed to create trigger function: %w", err)
 	  }
@@ -117,7 +117,7 @@ func InsertLog(ctx context.Context, db *pgx.Conn, log LogEntry) error {
 	return nil
 }
 
-func GetLogs(ctx context.Context, db *pgx.Conn, limit int, offset int) ([]LogEntry, error) { 
+func GetLogs(ctx context.Context, db *pgx.Conn, limit int, offset int, searchQuery string) ([]LogEntry, error) { 
 
 	getSQL := `SELECT timestamp, level, message, service
 	 FROM logs
