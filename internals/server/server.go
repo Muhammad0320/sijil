@@ -66,6 +66,8 @@ func (s *Server) handleGetLogs(c *gin.Context)  {
 	offset = 0
    }
 
+//    serachQuery := c.DefaultQuery("q", "")
+
 	ctx := c.Request.Context()
 	logs, err := database.GetLogs(ctx, s.db, limit, offset)
 	if err != nil {

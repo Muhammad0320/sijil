@@ -77,6 +77,19 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 	  if err != nil {
 		return  fmt.Errorf("failed to create trigger function: %w", err)
 	  }
+
+	  createTriggerSQL := `
+	  		DROP TRIGGER IF EXISTS ts_vector_update ON logs; 
+			CREATE TRIGGER ts_vector_update
+			BEFORE INSERT ON logs
+			FOR EACH ROW
+	  		EXECUTE FUNCTION update_log_search_vector();
+	  `
+
+	  _, err = db.Exec(ctx, createTriggerSQL)
+	  if err != nil {
+		return fmt.Errorf("failed to create trigger : %w", err)
+	  }
 	
 	fmt.Println("Database schema is ready!")
 	return nil
