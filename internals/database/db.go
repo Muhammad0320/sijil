@@ -41,7 +41,8 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 		timestamp   TIMESTAMPTZ       NOT NULL,
 		level       VARCHAR(50)       NOT NULL,
 		message     TEXT,
-		service     VARCHAR(100)
+		service     VARCHAR(100),
+		search_vector TSVECTOR
 	);`
 
 	_, err = db.Exec(ctx, createTableSQL)
@@ -52,10 +53,30 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 	// Turn it into a Hypertable
 	createHypertableSQL := `SELECT create_hypertable('logs', 'timestamp', if_not_exists => TRUE);`
 	_, err = db.Exec(ctx, createHypertableSQL)
-	
 		if err != nil {
 		return fmt.Errorf("failed to create hypertable: %w", err)
-	}
+	  }
+
+	  createFunctionSQL := `
+	  			CREATE OR REPLACE FUNCTIONS update_log_search_vector()
+				RETURN TRIGGER AS $$
+				BEGIN
+	  				-- Combine level, service, and message into one text block
+					-- and convert it into a tsvector
+					NEW.search_vector = to_tsvector('simple', 
+	  					COALESCE(NEW.level, '') || ' ' ||
+						COALESCE(NEW.service, '') || ' ' ||
+						COALESCE(NEW.message, '') 
+					
+					);
+					RETURN NEW;
+	  			END;
+				$$ LANGUAGE plpgsql
+	  `
+	  _, err = db.Exec(ctx, createFunctionSQL)
+	  if err != nil {
+		return  fmt.Errorf("failed to create trigger function: %w", err)
+	  }
 	
 	fmt.Println("Database schema is ready!")
 	return nil
