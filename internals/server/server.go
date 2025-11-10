@@ -81,4 +81,3 @@ func (s *Server) handleGetLogs(c *gin.Context)  {
 
 	c.JSON(200, gin.H{"logs": logs})
 }
-
