@@ -86,11 +86,10 @@ func (c *Client) writePump() {
 			}
 		case <- ticker.C: 
 			// Send a ping message to the client to keep conn alive
-			c.Conn.NetConn().SetWriteDeadline(time.Now().Add(writeWait))
+			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil{
 				return
 			}
-
 		}
 	}
 
@@ -177,4 +176,4 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	// Thse goroutines run in the background for life of the conn
 	go client.writePump()
 	go client.readPump()
-}	
+};

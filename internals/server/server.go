@@ -53,7 +53,7 @@ func (s *Server) handleLogIngest(c *gin.Context) {
 
 	s.logQueue <- logEntry
 
-	c.JSON(201, gin.H{"message": "log received!"})
+	c.JSON(202, gin.H{"message": "log received!"})
 }
 
 func (s *Server) handleGetLogs(c *gin.Context)  {
