@@ -21,7 +21,7 @@ type Log struct {
 	
 }
 
-var logRegex = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+\[(.*?)\]\s+(.*)$`)
+var logRegex = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+(?:\[(.*?)\]\s+)?\[(.*?)\]\s+(.*)$`)
 
 const timeLayout = "2006-01-02 15:04:05"
 
@@ -40,7 +40,7 @@ func main() {
 	
 	
 	for line := range t.Lines {
-		newLog := Log{Service: "log-agent-v1"}
+		newLog := Log{}
 
 		matches := logRegex.FindStringSubmatch(line.Text)
 		if matches == nil {
@@ -48,15 +48,22 @@ func main() {
 			fmt.Println("Line didn't match pattern, sending as info")
 			newLog.Level = "info"
 			newLog.Message = line.Text
+			newLog.Service = "log-agent-v1"
 		} else {
-
 			fmt.Println("Line matched! parsing...")
 			parsedTime, err := time.Parse(timeLayout, matches[1])
 			if err == nil {
 				newLog.Timestamp = parsedTime
 			}
-			newLog.Level = matches[2]
-			newLog.Message = matches[3]
+
+			if matches[2] == ""{
+				newLog.Service = "log-agent-v1"
+			} else {
+				newLog.Service = matches[2]
+			}
+
+			newLog.Level = matches[3]
+			newLog.Message = matches[4]
 		}
 
 		jsonData, err := json.Marshal(newLog)
