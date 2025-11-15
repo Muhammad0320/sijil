@@ -43,7 +43,7 @@ func TestLogParsing(t *testing.T) {
 				Timestamp: time.Date(2025, 1, 10, 9, 17, 20, 0 ,time.UTC),
 				Service: "",
 				Level: "ERROR",
-				Message: "User 'admin' logged in.",
+				Message: "Failed to process payment: 12345",
 			},
 		}, 
 		{

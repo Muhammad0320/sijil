@@ -105,7 +105,7 @@ func InsertLog(ctx context.Context, db *pgx.Conn, log LogEntry) error {
 	if logTime.IsZero() {
 		logTime = time.Now()
 	}
-
+	
 	insertSQL := `
 		INSERT INTO logs (timestamp, level, message, service) 
 		VALUES ($1, $2, $3, $4)`
