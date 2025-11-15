@@ -36,10 +36,40 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 		return fmt.Errorf("failed to enable timescaledb extension: %w", err)
 	}
 
+	// Create user tables
+	createUserTableSQL := `
+	CREATE TABLE IF NOT EXISTS users (
+		id SERIAL PRIMARY KEY,
+		email VARCHAR(255) UNIQUE NOT NULL,
+		password VARCHAR(255) NOT NULL,
+		created_at TIMESTAMPZ DEFAULT NOW()
+	)
+	`
+	_, err = db.Exec(ctx, createUserTableSQL)
+	if err != nil {
+		return  fmt.Errorf("failed to create 'users' table :%w ", err)
+	}
+
+	createProjectTableSQL := `
+		CREATE TABLE IF NOT EXISTS projects (
+			id SERIAL PRIMARY KEY,
+			user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			name VARCHAR(255) UNIQUE NOT NULL,
+			api_key VARCHAR(255) UNIQUE NOT NULL,
+			api_secret_hashed VARCHAR(255) NOT NULL,
+			created_at TIMESTAMPZ DEFAULT NOW()
+		)
+	`
+	_, err = db.Exec(ctx, createProjectTableSQL)
+	if err != nil {
+		return fmt.Errorf("faild to create project: %w", err)
+	}
+
 	// Create the main logs table
 	createTableSQL := `
 	CREATE TABLE IF NOT EXISTS logs (
 		timestamp   TIMESTAMPTZ       NOT NULL,
+		project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
 		level       VARCHAR(50)       NOT NULL,
 		message     TEXT,
 		service     VARCHAR(100),

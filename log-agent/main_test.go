@@ -13,7 +13,6 @@ func TestLogParsing(t *testing.T) {
 		Service string
 		Level string
 		Message string
-
 	}
 
 	testCases := []struct{
@@ -91,9 +90,6 @@ func TestLogParsing(t *testing.T) {
 				"\n Got:  %+v" + 
 				"\n Wanted: %+v", got, tc.expexted)
 			}
-
-
 		})	
 	}	
-
 }
