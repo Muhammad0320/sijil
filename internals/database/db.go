@@ -43,7 +43,7 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 		id SERIAL PRIMARY KEY,
 		name VARCHAR(255) NOT NULL,
 		email VARCHAR(255) UNIQUE NOT NULL,
-		password VARCHAR(255) NOT NULL,
+		password_hash VARCHAR(255) NOT NULL,
 		avatar_url TEXT,
 		created_at TIMESTAMPZ DEFAULT NOW()
 	);
@@ -215,7 +215,7 @@ func CreateUser(ctx context.Context, db *pgx.Conn, name, email, hashpassword str
 
 	var newUserID int 
 	err := db.QueryRow(ctx, 
-		`INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id`,
+		`INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id`,
 		name, email, hashpassword,
 	).Scan(&newUserID)
 	if err != nil {
@@ -225,3 +225,16 @@ func CreateUser(ctx context.Context, db *pgx.Conn, name, email, hashpassword str
 	return newUserID, nil 
 }
 
+func GetUserByEmail(ctx context.Context, db *pgx.Conn, email string) (User, error) {
+
+	var user User
+
+	err := db.QueryRow(ctx, 
+	`SELECT id, password_hash FROM users WHERE email = $1`,
+	email).Scan(&user.ID, &user.passwordHash)
+	if err != nil {
+		return user, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	return  user, nil 
+}
