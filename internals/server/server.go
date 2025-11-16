@@ -49,6 +49,7 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 	}
 
 	apiv1 := router.Group("/api/v1")
+	apiv1.Use(s.authMiddleware())
 	{
 		apiv1.POST("/logs", s.handleLogIngest)
 		apiv1.GET("/logs", s.handleGetLogs)
