@@ -36,15 +36,19 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 		return fmt.Errorf("failed to enable timescaledb extension: %w", err)
 	}
 
+
 	// Create user tables
 	createUserTableSQL := `
 	CREATE TABLE IF NOT EXISTS users (
 		id SERIAL PRIMARY KEY,
+		name VARCHAR(255) NOT NULL,
 		email VARCHAR(255) UNIQUE NOT NULL,
 		password VARCHAR(255) NOT NULL,
+		avatar_url TEXT,
 		created_at TIMESTAMPZ DEFAULT NOW()
-	)
+	);
 	`
+
 	_, err = db.Exec(ctx, createUserTableSQL)
 	if err != nil {
 		return  fmt.Errorf("failed to create 'users' table :%w ", err)
@@ -163,8 +167,6 @@ func GetLogs(ctx context.Context, db *pgx.Conn, limit int, offset int, searchQue
 	args := make([]interface{}, 0)
 	argsCounter := 1
 
-	
-	
 	var queryBuilder strings.Builder
 	queryBuilder.WriteString(`
 		SELECT timestamp, level, message, service 
@@ -203,3 +205,23 @@ func GetLogs(ctx context.Context, db *pgx.Conn, limit int, offset int, searchQue
 	
 	return logs, nil
 }
+
+type User struct {
+	ID string 
+	passwordHash string
+}
+
+func CreateUser(ctx context.Context, db *pgx.Conn, name, email, hashpassword string) (int, error) {
+
+	var newUserID int 
+	err := db.QueryRow(ctx, 
+		`INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id`,
+		name, email, hashpassword,
+	).Scan(&newUserID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return newUserID, nil 
+}
+
