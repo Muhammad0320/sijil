@@ -208,7 +208,7 @@ func GetLogs(ctx context.Context, db *pgx.Conn, limit int, offset int, searchQue
 
 type User struct {
 	ID string 
-	passwordHash string
+	PasswordHash string
 }
 
 func CreateUser(ctx context.Context, db *pgx.Conn, name, email, hashpassword string) (int, error) {
@@ -228,10 +228,9 @@ func CreateUser(ctx context.Context, db *pgx.Conn, name, email, hashpassword str
 func GetUserByEmail(ctx context.Context, db *pgx.Conn, email string) (User, error) {
 
 	var user User
-
 	err := db.QueryRow(ctx, 
 	`SELECT id, password_hash FROM users WHERE email = $1`,
-	email).Scan(&user.ID, &user.passwordHash)
+	email).Scan(&user.ID, &user.PasswordHash)
 	if err != nil {
 		return user, fmt.Errorf("failed to get user: %w", err)
 	}
