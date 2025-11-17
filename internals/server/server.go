@@ -49,10 +49,13 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 		authGroup.POST("/login", s.handleUserLogin)
 	}
 
+	// For the Loading Dock
+	apiv1.POST("/logs", s.apiKeyAuthMiddleware() ,s.handleLogIngest)
+
+	// For our Control Room
 	logGroups := apiv1.Group("/logs")	
 	logGroups.Use(s.authMiddleware())
 	{
-		logGroups.POST("", s.handleLogIngest)
 		logGroups.GET("", s.handleGetLogs)
 		logGroups.GET("/ws", s.handleWsLogic)
 	}
