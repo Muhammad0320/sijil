@@ -67,14 +67,53 @@ func (s *Server) handleLogIngest(c *gin.Context) {
 	if err:= c.BindJSON(&logEntry); err != nil {
 		c.JSON(400, gin.H{"error": "bad request"})
 		return 
+	};
+
+	projectID, exists := c.Get("projectID")
+	if !exists {
+		c.JSON(500, gin.H{"error": "unauthorized context"})
+		return
 	}
+
+	logEntry.ProjectID = projectID.(int)
 
 	s.logQueue <- logEntry
 
 	c.JSON(202, gin.H{"message": "log received!"})
 }
 
+
 func (s *Server) handleGetLogs(c *gin.Context)  {
+
+	userID, exists := c.Get("userID")
+	if !exists{
+		c.JSON(401, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	projectIDStr := c.Query("project_id")
+	if projectIDStr == "" {
+		c.JSON(400, gin.H{"error": "project_id query param is required"})
+		return
+	}
+
+	projectID, err := strconv.Atoi(projectIDStr)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid project_id"})
+		return
+	}
+
+	// Security check: Does this user own this project
+	isOwner, err := database.CheckProjectIDOwners(c, s.db, userID.(int), projectID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "server error checking ownership"})
+		return
+	}
+
+	if !isOwner {
+		c.JSON(403, gin.H{"error": "you do not have access to this project"})
+		return
+	}
 
 	limitString := c.DefaultQuery("limit", "100")
 	limit, err := strconv.Atoi(limitString)
@@ -91,7 +130,7 @@ func (s *Server) handleGetLogs(c *gin.Context)  {
    serachQuery := c.DefaultQuery("q", "")
 
 	ctx := c.Request.Context()
-	logs, err := database.GetLogs(ctx, s.db, limit, offset, serachQuery)
+	logs, err := database.GetLogs(ctx, s.db, projectID ,limit, offset, serachQuery)
 	if err != nil {
 		fmt.Printf("Failed to get logs: %v\n", err)
 
