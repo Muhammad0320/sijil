@@ -280,3 +280,35 @@ func CreateProject(ctx context.Context, db *pgx.Conn, userID int, name, apiKey, 
 	return projectID, nil 	
 }
 
+func GetUserProjects(ctx context.Context, db *pgx.Conn, userID int) ( []struct{
+	ID int 		`json:"id"`
+	Name string `json:"name"`
+} , error) {
+
+	rows, err := db.Query(ctx, `SELECT id, name FROM projects WHERE user_id=$1`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var projects []struct{
+	ID int 		`json:"id"`
+	Name string `json:"name"`
+	}
+
+	for rows.Next() {
+
+		var p struct{
+	ID int 		`json:"id"`
+	Name string `json:"name"`
+	}
+	
+	if err := rows.Scan(&p.ID, p.Name); err != nil {
+		return nil, err
+	}
+
+	projects = append(projects, p)
+	}
+
+	return  projects, nil 
+}
