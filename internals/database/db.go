@@ -15,6 +15,7 @@ type LogEntry struct {
 	Level   string `json:"level"`
 	Message string `json:"message"`
 	Service string `json:"service"`
+	ProjectID int `json:"-"`
 }
 
 
@@ -145,14 +146,15 @@ func InsertLog(ctx context.Context, db *pgx.Conn, log LogEntry) error {
 	}
 	
 	insertSQL := `
-		INSERT INTO logs (timestamp, level, message, service) 
-		VALUES ($1, $2, $3, $4)`
+		INSERT INTO logs (timestamp, level, message, service, project_id) 
+		VALUES ($1, $2, $3, $4, $5)`
 
 	_, err := db.Exec(ctx, insertSQL,
 		logTime,
 		log.Level,
 		log.Message,
 		log.Service,
+		log.ProjectID
 	)
 	
 	if err != nil {
@@ -162,16 +164,16 @@ func InsertLog(ctx context.Context, db *pgx.Conn, log LogEntry) error {
 	return nil
 }
 
-func GetLogs(ctx context.Context, db *pgx.Conn, limit int, offset int, searchQuery string) ([]LogEntry, error) { 
+func GetLogs(ctx context.Context, db *pgx.Conn, limit, projectID, offset int, searchQuery string) ([]LogEntry, error) { 
 
 	args := make([]interface{}, 0)
 	argsCounter := 1
 
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(`
-		SELECT timestamp, level, message, service 
-		FROM logs
-	`)
+	queryBuilder.WriteString(fmt.Sprintf(`SELECT timestamp, level, message, service 
+		FROM logs WHERE project_id = $%d`, argsCounter))
+	args = append(args, projectID)
+	args++
 
 	// Conditionally add the WHERE clause for search
 	if searchQuery != "" {
@@ -253,6 +255,6 @@ func GetProductByApiKey(ctx context.Context, db *pgx.Conn, apiKey string) (Proje
 		return project, fmt.Errorf("failed to gett project: %w", err)
 	}
 
-	
+
 	return  project, nil 
 }
