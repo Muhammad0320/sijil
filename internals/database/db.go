@@ -60,7 +60,7 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 			user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			name VARCHAR(255) UNIQUE NOT NULL,
 			api_key VARCHAR(255) UNIQUE NOT NULL,
-			api_secret_hashed VARCHAR(255) NOT NULL,
+			api_secret_hash VARCHAR(255) NOT NULL,
 			created_at TIMESTAMPZ DEFAULT NOW()
 		)
 	`
@@ -236,4 +236,23 @@ func GetUserByEmail(ctx context.Context, db *pgx.Conn, email string) (User, erro
 	}
 
 	return  user, nil 
+}
+
+type Project struct {
+	ID int 
+	UserID int 
+	ApiSecretHash string 
+}
+
+func GetProductByApiKey(ctx context.Context, db *pgx.Conn, apiKey string) (Project, error) {
+	var project Project	
+	err := db.QueryRow(ctx, `
+	SELECT id, user_id, api_secret_hash FROM projects WHERE api_key = $1
+	`, apiKey).Scan(&project.ID, &project.UserID, &project.ApiSecretHash)
+	if err != nil {
+		return project, fmt.Errorf("failed to gett project: %w", err)
+	}
+
+	
+	return  project, nil 
 }
