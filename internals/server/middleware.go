@@ -2,6 +2,8 @@ package server
 
 import (
 	"fmt"
+	"log-engine/internals/auth"
+	"log-engine/internals/database"
 	"net/http"
 	"strings"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Conteol Room Guard
 func (s *Server) authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
@@ -50,6 +53,40 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 
 		userID := int(userIDFloat)
 		c.Set("userID", userID)
+
+		c.Next()
+	}
+}
+
+// The Loading Dock guard
+func (s *Server) apiKeyAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		
+		apiKey := c.GetHeader("X-Api-Key")
+		if apiKey == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "X-Api-Key header is required"})
+				return 
+			} 
+
+		authHeader := c.GetHeader("Authorization")
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] == "Bearer" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization error format"})
+			return 
+		}
+		apiSecret := parts[1]
+
+		project, err := database.GetProductByApiKey(c, s.db, apiKey)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid api key"})
+			return 
+		}
+
+		if !auth.ComparePasswordHash(apiSecret, project.ApiSecretHash) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid api secret"})
+		}
+
+		c.Set("projectID", project.ID)
 
 		c.Next()
 	}
