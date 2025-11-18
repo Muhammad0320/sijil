@@ -28,9 +28,16 @@ const timeLayout = "2006-01-02 15:04:05"
 
 func main() {
 
-		filePtr := flag.String("f", "test.log", "log file to tail")
-		servicePtr := flag.String("s", "log-agent-v1", "service name to tag logs with")
-		flag.Parse()
+	filePtr := flag.String("f", "test.log", "log file to tail")
+	servicePtr := flag.String("s", "log-agent-v1", "service name to tag logs with")
+	apiKeyPtr := flag.String("pk", "", "Public API key (pk_live_...)")	
+	secretKeyPtr := flag.String("sk", "", "Secret API key (pk_live_...)")	
+
+	flag.Parse()
+
+	if *apiKeyPtr == "" || *secretKeyPtr == "" {
+		log.Fatal("Error: you must provide both pk ans sk flags")
+	} 
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -83,6 +90,9 @@ func main() {
 		continue
 	}
 	req.Header.Set("Content-Type", "application/json")
+
+	req.Header.Set("X-Api-Key", *apiKeyPtr)
+	req.Header.Set("Authorization", "Bearer "+*secretKeyPtr)
 
 	resp, err := client.Do(req)
 	if err != nil {
