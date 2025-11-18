@@ -263,3 +263,15 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 		"api_secret": apiSecret, // This is the first and last time to send the api key 
 	})
 }
+
+func (s *Server) handleListProjects(c *gin.Context) {
+
+	userID, _ := c.Get("userID")
+	projects, err := database.GetUserProjects(c, s.db, userID.(int))
+	if err != nil {
+		c.JSON(500, gin.H{"error": "internal error"})
+		return
+	}
+
+	c.JSON(200, gin.H{"projects": projects})
+}
