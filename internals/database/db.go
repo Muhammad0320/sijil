@@ -21,6 +21,7 @@ type LogEntry struct {
 
 // ConnectDB tries to connect to the database and returns the connection.
 func ConnectDB(ctx context.Context, connString string) (*pgx.Conn, error) {
+	fmt.Println("Attempting to connect with connection string:", connString)
 	db, err := pgx.Connect(ctx, connString)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
@@ -40,15 +41,15 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 
 	// Create user tables
 	createUserTableSQL := `
-	CREATE TABLE IF NOT EXISTS users (
-		id SERIAL PRIMARY KEY,
-		name VARCHAR(255) NOT NULL,
-		email VARCHAR(255) UNIQUE NOT NULL,
-		password_hash VARCHAR(255) NOT NULL,
-		avatar_url TEXT,
-		created_at TIMESTAMPZ DEFAULT NOW()
-	);
-	`
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    avatar_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+`
 
 	_, err = db.Exec(ctx, createUserTableSQL)
 	if err != nil {
@@ -62,7 +63,7 @@ func CreateSchema(ctx context.Context, db *pgx.Conn) error {
 			name VARCHAR(255) UNIQUE NOT NULL,
 			api_key VARCHAR(255) UNIQUE NOT NULL,
 			api_secret_hash VARCHAR(255) NOT NULL,
-			created_at TIMESTAMPZ DEFAULT NOW()
+			created_at TIMESTAMPTZ DEFAULT NOW()
 		)
 	`
 	_, err = db.Exec(ctx, createProjectTableSQL)
