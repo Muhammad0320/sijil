@@ -12,17 +12,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 	logQueue chan <- database.LogEntry
 	hub *hub.Hub
 	jwtSecret string
 }
 
-func NewServer (db *pgx.Conn, logQueue chan <- database.LogEntry, hub *hub.Hub, jwtSecret string) *Server {
+func NewServer (db *pgxpool.Pool, logQueue chan <- database.LogEntry, hub *hub.Hub, jwtSecret string) *Server {
 	return &Server{
 		db: db,
 		logQueue: logQueue,

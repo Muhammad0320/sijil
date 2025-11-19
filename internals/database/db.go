@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var EmailExists = errors.New("email already exists")
@@ -24,9 +24,9 @@ type LogEntry struct {
 
 
 // ConnectDB tries to connect to the database and returns the connection.
-func ConnectDB(ctx context.Context, connString string) (*pgx.Conn, error) {
+func ConnectDB(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 	fmt.Println("Attempting to connect with connection string:", connString)
-	db, err := pgx.Connect(ctx, connString)
+	db, err := pgxpool.New(ctx, connString)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
@@ -34,7 +34,7 @@ func ConnectDB(ctx context.Context, connString string) (*pgx.Conn, error) {
 }
 
 // CreateSchema sets up the logs table and hypertable.
-func CreateSchema(ctx context.Context, db *pgx.Conn) error {
+func CreateSchema(ctx context.Context, db *pgxpool.Pool) error {
 	// Enable the TimescaleDB extension
 	enableExtensionSQL := `CREATE EXTENSION IF NOT EXISTS timescaledb;`
 	_, err := db.Exec(ctx, enableExtensionSQL)
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS users (
 }
 
 // InsertLog writes a new LogEntry to the database.
-func InsertLog(ctx context.Context, db *pgx.Conn, log LogEntry) error {
+func InsertLog(ctx context.Context, db *pgxpool.Pool, log LogEntry) error {
 	// I wish there's a ternary expression equivalent in Go
 	var logTime = log.Timestamp
 	if logTime.IsZero() {
@@ -171,7 +171,7 @@ func InsertLog(ctx context.Context, db *pgx.Conn, log LogEntry) error {
 	return nil
 }
 
-func GetLogs(ctx context.Context, db *pgx.Conn,  projectID ,limit, offset int, searchQuery string) ([]LogEntry, error) { 
+func GetLogs(ctx context.Context, db *pgxpool.Pool,  projectID ,limit, offset int, searchQuery string) ([]LogEntry, error) { 
 
 	args := make([]interface{}, 0)
 	argsCounter := 1
@@ -220,7 +220,7 @@ type User struct {
 	PasswordHash string
 }
 
-func CreateUser(ctx context.Context, db *pgx.Conn, name, email, hashpassword string) (int, error) {
+func CreateUser(ctx context.Context, db *pgxpool.Pool, name, email, hashpassword string) (int, error) {
 
 	var newUserID int 
 	err := db.QueryRow(ctx, 
@@ -241,7 +241,7 @@ func CreateUser(ctx context.Context, db *pgx.Conn, name, email, hashpassword str
 	return newUserID, nil 
 }
 
-func GetUserByEmail(ctx context.Context, db *pgx.Conn, email string) (User, error) {
+func GetUserByEmail(ctx context.Context, db *pgxpool.Pool, email string) (User, error) {
 
 	var user User
 	err := db.QueryRow(ctx, 
@@ -260,7 +260,7 @@ type Project struct {
 	ApiSecretHash string 
 }
 
-func GetProductByApiKey(ctx context.Context, db *pgx.Conn, apiKey string) (Project, error) {
+func GetProductByApiKey(ctx context.Context, db *pgxpool.Pool, apiKey string) (Project, error) {
 	var project Project	
 	err := db.QueryRow(ctx, `
 	SELECT id, user_id, api_secret_hash FROM projects WHERE api_key = $1
@@ -272,7 +272,7 @@ func GetProductByApiKey(ctx context.Context, db *pgx.Conn, apiKey string) (Proje
 	return  project, nil 
 }
 
-func CheckProjectIDOwners(ctx context.Context, db *pgx.Conn, userID, projectID int) (bool, error) {
+func CheckProjectIDOwners(ctx context.Context, db *pgxpool.Pool, userID, projectID int) (bool, error) {
 	var exists bool 
 	err := db.QueryRow(ctx, `
 	SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1 AND user_id = $2)
@@ -281,7 +281,7 @@ func CheckProjectIDOwners(ctx context.Context, db *pgx.Conn, userID, projectID i
 	return  exists, err
 }
 
-func CreateProject(ctx context.Context, db *pgx.Conn, userID int, name, apiKey, apiSecretHash string) (int, error) {
+func CreateProject(ctx context.Context, db *pgxpool.Pool, userID int, name, apiKey, apiSecretHash string) (int, error) {
 	var projectID int 
 
 	err := db.QueryRow(ctx, `
@@ -294,7 +294,7 @@ func CreateProject(ctx context.Context, db *pgx.Conn, userID int, name, apiKey, 
 	return projectID, nil 	
 }
 
-func GetUserProjects(ctx context.Context, db *pgx.Conn, userID int) ( []struct{
+func GetUserProjects(ctx context.Context, db *pgxpool.Pool, userID int) ( []struct{
 	ID int 		`json:"id"`
 	Name string `json:"name"`
 } , error) {
