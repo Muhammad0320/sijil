@@ -9,6 +9,7 @@ import (
 	"log-engine/internals/utils"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -267,7 +268,7 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "failed to secure peoject keys"})
 	}
 
-	projectID, err := database.CreateProject(c, s.db, userID.(int), req.Name, apiKey, secretHash)
+	projectID, err := database.CreateProject(c.Request.Context(), s.db, userID.(int), req.Name, apiKey, secretHash)
 	if err != nil {
 		fmt.Printf("Internal Error ------------ : %v\n", err)
 		c.JSON(500, gin.H{"error":  "failed to create project"})
@@ -285,11 +286,66 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 func (s *Server) handleListProjects(c *gin.Context) {
 
 	userID, _ := c.Get("userID")
-	projects, err := database.GetUserProjects(c, s.db, userID.(int))
+	projects, err := database.GetUserProjects(c.Request.Context(), s.db, userID.(int))
 	if err != nil {
 		c.JSON(500, gin.H{"error": "internal error"})
 		return
 	}
 
 	c.JSON(200, gin.H{"projects": projects})
+}
+
+
+func (s *Server) handleGetStats(c *gin.Context) {
+
+	userID, _ := c.Get("userID")
+	projectIDStr := c.Query("project_id")
+	projectID, _ := strconv.Atoi(projectIDStr)
+
+	isOwner, err := database.CheckProjectIDOwners(c, s.db, userID.(int), projectID) 
+	if err != nil {
+		c.JSON(500, gin.H{"error": "error checking user's project ownership"})
+		return
+	}
+
+	if !isOwner {
+		c.JSON(403, gin.H{"error": "You are not allowed to view this project"})
+		return
+	}
+
+	fromStr := c.Query("from")
+	fromTime := time.Now().Add(-24 * time.Hour )
+	if fromStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, fromStr); err == nil {
+				fromTime = parsed
+		} 
+	}
+
+	toStr := c.Query("to")
+	toTime := time.Now()
+	if toStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, toStr); err == nil {
+			toTime = parsed
+		}
+	}
+
+	bucketParams := c.DefaultQuery("bucket", "1hr")
+	bucketMap  := map[string]string {
+		"1m": "1 minutes", "5m": "5 minutes", "15m": "15 minutes", "30m": "30 minutes", 
+		"1h": "1 hour", "6h": "6 hours", "12h": "12 hours", "1d": "1 day",
+	}
+
+	pgBucket, ok := bucketMap[bucketParams] 
+	if !ok {
+		pgBucket = "1 hour"
+	}
+
+	stats, err := database.GetLogStats(c.Request.Context(), s.db, projectID, fromTime, toTime, pgBucket)
+	if err != nil {
+		fmt.Printf("Stats Error: %v \n", err)
+		c.JSON(500, gin.H{"error": "internal error"})
+		return
+	}
+
+	c.JSON(200, gin.H{"stats": stats})
 }
