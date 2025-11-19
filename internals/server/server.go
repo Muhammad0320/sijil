@@ -85,6 +85,8 @@ func (s *Server) handleLogIngest(c *gin.Context) {
 
 	logEntry.ProjectID = projectID.(int)
 
+	fmt.Println("Logs reach here? ")
+
 	s.logQueue <- logEntry
 
 	c.JSON(202, gin.H{"message": "log received!"})

@@ -64,20 +64,16 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 // The Loading Dock guard
 func (s *Server) apiKeyAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		
-		fmt.Println("---------------------- 1")
-		
+				
 		apiKey := c.GetHeader("X-Api-Key")
 		if apiKey == "" {
-			fmt.Println("---------------------- 2")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "X-Api-Key header is required"})
 			return 
 			} 
 			
-			fmt.Println("---------------------- 3")
 		authHeader := c.GetHeader("Authorization")
 		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] == "Bearer" {
+		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization error format"})
 			return 
 		}
