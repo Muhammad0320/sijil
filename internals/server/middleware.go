@@ -21,8 +21,9 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 			return 
 		}
 
+		
 		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] == "Bearer" {
+		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization header format"})
 			return 
 		}

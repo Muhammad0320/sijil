@@ -189,15 +189,13 @@ func (s *Server) handleUserRegister(c *gin.Context) {
 		return
 	}
 	
-	
 	tokenString, err := auth.CreateJWT(s.jwtSecret, newUserId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create token"})
 		return 
 	}
 	
-
-c.JSON(http.StatusCreated, gin.H{"token": tokenString})
+	c.JSON(http.StatusCreated, gin.H{"token": tokenString})
 }
 
 func (s *Server) handleUserLogin(c *gin.Context) {
@@ -245,6 +243,8 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("The user id ------------: %v\n", userID.(int))
+
 	var req struct {
 		Name string `json:"name" validate:"required,min=3"`
 	}
@@ -267,6 +267,7 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 
 	projectID, err := database.CreateProject(c, s.db, userID.(int), req.Name, apiKey, secretHash)
 	if err != nil {
+		fmt.Printf("Internal Error ------------ : %v\n", err)
 		c.JSON(500, gin.H{"error":  "failed to create project"})
 		return
 	}

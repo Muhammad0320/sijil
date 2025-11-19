@@ -225,7 +225,7 @@ func CreateUser(ctx context.Context, db *pgx.Conn, name, email, hashpassword str
 		`INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id`,
 		name, email, hashpassword,
 	).Scan(&newUserID)
-	
+
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
@@ -283,8 +283,8 @@ func CreateProject(ctx context.Context, db *pgx.Conn, userID int, name, apiKey, 
 	var projectID int 
 
 	err := db.QueryRow(ctx, `
-	INSERT INTO projects (name, api_key, api_secret_hash) VALUES ($1, $2, $3) RETURNING id
-	`, name, apiKey, apiSecretHash).Scan(&projectID)
+	INSERT INTO projects (user_id, name, api_key, api_secret_hash) VALUES ($1, $2, $3, $4) RETURNING id
+	`, userID, name, apiKey, apiSecretHash).Scan(&projectID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create user: %w", err)
 	}
