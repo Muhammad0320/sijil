@@ -326,3 +326,48 @@ func GetUserProjects(ctx context.Context, db *pgxpool.Pool, userID int) ( []stru
 
 	return  projects, nil 
 }
+
+type LogStat struct { 
+	Bucket time.Time `json:"time"`
+	Count int `json:"count"`
+}
+
+func GetLogStats(ctx context.Context, db *pgxpool.Pool, projectID int, fromTime, toTime time.Time, bucket string) ([]LogStat, error) {
+
+	validBuckets := map[string]bool {
+		"1 minutes": true, "5 minutes": true, "15 minutes": true, "30 minutes": true,
+		"1 hour": true, "6 hours": true, "12 hours": true, "1 day": true,
+	}
+
+	if !validBuckets[bucket] {
+		return  nil, fmt.Errorf("Invalid bucket interval: %s\n", bucket)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT time_bucket('%s', timestamp) AS bucket, COUNT(*)
+		FROM logs 
+		WHERE project_id = $1
+		  AND  timestamp >= $2
+		  AND  timestamp <= $3
+		GROUP BY bucket
+		ORDER BY bucket ASC;
+	`, bucket)
+	rows, err := db.Query(ctx, query, projectID, fromTime, toTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var stats []LogStat
+	for rows.Next() {
+		var s LogStat
+
+		if err := rows.Scan(&s.Bucket, &s.Count); err != nil {
+			return nil, err
+		}
+
+		stats = append(stats, s)
+	}
+
+	return  stats, nil 
+} 
