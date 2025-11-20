@@ -33,6 +33,8 @@ type Client struct {
 	Hub *Hub
 	Conn *websocket.Conn
 	Send chan []byte 
+	ProjectID int 
+	userID int 
 }
 
 // -- This fxn reads from the websocket --
@@ -98,8 +100,8 @@ func (c *Client) writePump() {
 // Hub maintains the set of active clients and broadcast messages
 type Hub struct {
 
-	clients map[*Client]bool 
-	broadcast chan []byte 
+	rooms map[int]map[*Client]bool 
+	broadcast chan database.LogEntry
 	register chan *Client
 	unregister chan *Client
 }
@@ -107,8 +109,8 @@ type Hub struct {
 func NewHub() *Hub {
 
 	return &Hub{
-		clients: make(map[*Client]bool),
-		broadcast: make(chan []byte),
+		rooms: make(map[int]map[*Client]bool),
+		broadcast: make(chan database.LogEntry),
 		register: make(chan *Client),
 		unregister: make(chan *Client),
 	}
@@ -122,43 +124,53 @@ func (h *Hub) Run() {
 		select {
 
 		case client := <- h.register: 
-			h.clients[client] = true
+			if h.rooms[client.ProjectID] == nil {
+				h.rooms[client.ProjectID] = make(map[*Client]bool)
+			}
+
+			h.rooms[client.ProjectID][client] = true 
 		
 		case client := <- h.unregister: 
-			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
-				close(client.Send)
+			if room, ok := h.rooms[client.ProjectID]; ok {
+				if _, ok := room[client]; ok {
+					delete(room, client)
+					close(client.Send)
+				}
+
+				if len(room) == 0 {
+					delete(h.rooms, client.ProjectID)
+				}
 			}
-		case message := <- h.broadcast: 
-			for client := range h.clients {
+		case logEntry := <- h.broadcast: 
+
+			room := h.rooms[logEntry.ProjectID]
+
+			if room == nil {
+				continue
+			}
+			message, _ := json.Marshal(logEntry)
+
+			for client := range  room {
 				select {
 				case client.Send <- message:
 					// Message sent successfully
 				default: 
 					close(client.Send)
-					delete(h.clients, client)
+					delete(room, client)
 				}
 			}
-
 		}
-
 	}
-
 }
 
 func (h *Hub) BroadcastLog(logEntry database.LogEntry) {
 
-	b, err := json.Marshal(logEntry)
-	if err != nil {
-		return
-	}
-
-	h.broadcast <- b
+	h.broadcast <- logEntry
 }
 
 // This is the "Front door" for our server handler
 // handles ws request from the peer
-func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, projectID, userID int) {
 
 	// upgrade http to ws 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -168,7 +180,13 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create the new client
-	client := &Client{Hub: hub, Conn: conn, Send: make(chan []byte, 256)}
+	client := &Client{
+		 Hub: hub, 
+		 Conn: conn,
+		 Send: make(chan []byte, 256),
+		ProjectID: projectID,
+		userID: userID,
+		}
 
 	// Register client
 	client.Hub.register <- client
