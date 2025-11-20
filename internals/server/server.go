@@ -32,6 +32,27 @@ func NewServer (db *pgxpool.Pool, logQueue chan <- database.LogEntry, hub *hub.H
 	}
 }
 
+func ParseTime(c *gin.Context) (time.Time, time.Time) {
+
+	fromStr := c.Query("from")
+	fromTime := time.Now().Add(-24 * time.Hour )
+	if fromStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, fromStr); err == nil {
+				fromTime = parsed
+		} 
+	}
+
+	toStr := c.Query("to")
+	toTime := time.Now()
+	if toStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, toStr); err == nil {
+			toTime = parsed
+		}
+	}
+
+	return  fromTime, toTime
+}
+
 func (s *Server) Run(addr string)  error {
 
 	router := gin.Default() 
@@ -116,7 +137,7 @@ func (s *Server) handleGetLogs(c *gin.Context)  {
 	}
 
 	// Security check: Does this user own this project
-	isOwner, err := database.CheckProjectIDOwners(c, s.db, userID.(int), projectID)
+	isOwner, err := database.CheckProjectIDOwners(c.Request.Context(), s.db, userID.(int), projectID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "server error checking ownership"})
 		return
@@ -303,7 +324,7 @@ func (s *Server) handleGetStats(c *gin.Context) {
 	projectIDStr := c.Query("project_id")
 	projectID, _ := strconv.Atoi(projectIDStr)
 
-	isOwner, err := database.CheckProjectIDOwners(c, s.db, userID.(int), projectID) 
+	isOwner, err := database.CheckProjectIDOwners(c.Request.Context(), s.db, userID.(int), projectID) 
 	if err != nil {
 		c.JSON(500, gin.H{"error": "error checking user's project ownership"})
 		return
@@ -314,21 +335,7 @@ func (s *Server) handleGetStats(c *gin.Context) {
 		return
 	}
 
-	fromStr := c.Query("from")
-	fromTime := time.Now().Add(-24 * time.Hour )
-	if fromStr != "" {
-		if parsed, err := time.Parse(time.RFC3339, fromStr); err == nil {
-				fromTime = parsed
-		} 
-	}
-
-	toStr := c.Query("to")
-	toTime := time.Now()
-	if toStr != "" {
-		if parsed, err := time.Parse(time.RFC3339, toStr); err == nil {
-			toTime = parsed
-		}
-	}
+	fromTime, toTime := ParseTime(c)
 
 	bucketParams := c.DefaultQuery("bucket", "1hr")
 	bucketMap  := map[string]string {
@@ -349,4 +356,28 @@ func (s *Server) handleGetStats(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"stats": stats})
+}
+
+
+func (s *Server) handleGetSummary(c *gin.Context) {
+
+	userID, _ := c.Get("userID")
+	projectIDStr := c.Query("project_id")
+	projectID, _ := strconv.Atoi(projectIDStr)
+
+	isOwner, _ := database.CheckProjectIDOwners(c.Request.Context(), s.db, userID.(int), projectID)
+	if !isOwner {
+		c.JSON(403, gin.H{"error": "forbidden"})
+		return
+	}
+
+	fromTime, toTime := ParseTime(c)
+
+	summary, err := database.GetlogSummary(c.Request.Context(), s.db, projectID, fromTime, toTime)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "internal error"})
+		return
+	}
+
+	c.JSON(200, gin.H{"summary": summary})
 }
