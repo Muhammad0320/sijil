@@ -44,7 +44,6 @@ func main() {
 	}
 
 	fmt.Println("starting to tail test.log")
-	
 	t, err := tail.TailFile(*filePtr, tail.Config{Follow: true})
 	if err != nil {
 		log.Fatalf("Failed to tail file: %v", err)
@@ -67,7 +66,7 @@ func main() {
 			if err == nil {
 				newLog.Timestamp = parsedTime
 			}
-
+            
 			if matches[2] == ""{
 				newLog.Service = *servicePtr
 			} else {
