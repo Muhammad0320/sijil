@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 
 const API_URL = "http://localhost:8080/api/v1";
 
-interface LoginResponse {
+interface AuthResponse {
   token: string;
 }
 
@@ -32,7 +32,7 @@ export async function loginAction(
   const { email, password } = validatedSchema.data;
 
   try {
-    const data = await fetchClient<LoginResponse>("/auth/login", {
+    const data = await fetchClient<AuthResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
@@ -74,27 +74,17 @@ export async function registerAction(
   const { name, email, password } = validatedRegisterSchema.data;
 
   try {
-    const res = await fetch(`${API_URL}/auth/register`, {
+    const data = await fetchClient<AuthResponse>("/auth/register", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        email,
-        password,
-      }),
+      body: JSON.stringify({ name, email, password }),
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-      return {
-        errors: { _form: [data.error || "Registration failed"] },
-      };
-    }
+    await setSession(data.token);
   } catch (error) {
     if (error instanceof Error) {
       return {
         errors: {
-          _form: [error.message],
+          _form: [error.message || "Registration failed"],
         },
       };
     }
