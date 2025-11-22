@@ -6,6 +6,7 @@ import { loginAction } from "@/actions/auth";
 import { AuthFormState } from "@/lib/definitions"; // Import our Type
 import { FieldError, GlobalError } from "@/components/ui/formErrors";
 import { useToast } from "@/providers/ToastProvider";
+import { BorderBeamButton } from "@/components/ui/borderBeamButton";
 
 const Container = styled.div`
   height: 100vh;
@@ -137,9 +138,11 @@ export default function LoginPage() {
           <FieldError errors={state.errors.password} />
         </FormGroup>
 
-        <SubmitButton type="submit" disabled={isPending}>
-          {isPending ? "Authenticating..." : "Sign In"}
-        </SubmitButton>
+        <div style={{ marginTop: "10px" }}>
+          <BorderBeamButton type="submit" isLoading={isPending}>
+            Sign In
+          </BorderBeamButton>
+        </div>
       </Card>
     </Container>
   );
