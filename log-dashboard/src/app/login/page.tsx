@@ -63,27 +63,6 @@ const Input = styled.input<{ hasError?: boolean }>`
   }
 `;
 
-const SubmitButton = styled.button`
-  background: #238636;
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: 0.2s;
-
-  &:hover {
-    background: #2ea043;
-  }
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-`;
-
 // Initial State matches our Interface
 const initialState: AuthFormState = {
   errors: {},
