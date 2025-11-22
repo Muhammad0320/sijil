@@ -8,7 +8,7 @@ export interface AuthFormState {
     _form?: string[];
   };
 
-  message?: "";
+  message?: string;
 }
 
 export const LoginFormSchema = z.object({
