@@ -11,6 +11,13 @@ export interface AuthFormState {
   message?: string;
 }
 
+export interface ProjectFormState {
+  errors: {
+    name?: string[];
+  };
+  message?: string;
+}
+
 export const LoginFormSchema = z.object({
   email: z.email({ error: "Please enter a valid email address." }),
   password: z
