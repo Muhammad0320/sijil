@@ -93,10 +93,5 @@ export async function registerAction(
     };
   }
 
-  return {
-    errors: {},
-    message: "Registration Successful!",
-  };
-
   redirect("/");
 }
