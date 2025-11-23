@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import styled from "styled-components";
 import { LogEntry } from "@/lib/types";
