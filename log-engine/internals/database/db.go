@@ -12,8 +12,8 @@ import (
 )
 
 var EmailExists = errors.New("email already exists")
+var NameExists = errors.New("project name already exists")
 
-// LogEntry struct now lives here, as it defines our database model.
 type LogEntry struct {
 	Timestamp time.Time `json:"timestamp"`
 	Level   string `json:"level"`
@@ -290,6 +290,13 @@ func CreateProject(ctx context.Context, db *pgxpool.Pool, userID int, name, apiK
 	INSERT INTO projects (user_id, name, api_key, api_secret_hash) VALUES ($1, $2, $3, $4) RETURNING id
 	`, userID, name, apiKey, apiSecretHash).Scan(&projectID)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == "23505" {
+				return 0, NameExists
+			}
+		}
+
 		return 0, fmt.Errorf("failed to create user: %w", err)
 	}
 
