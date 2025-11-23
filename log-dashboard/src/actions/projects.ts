@@ -1,7 +1,7 @@
 "use server";
 
 import { fetchClient } from "@/lib/client";
-import { getErrorMessage } from "@/lib/types";
+import { getErrorMessage, Project } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -49,5 +49,22 @@ export async function createProjectAction(
       };
     }
     return { errors: { _form: [msg] } };
+  }
+}
+
+type FetchResult<T> = Promise<[T, null] | [null, string]>;
+
+export async function getProjects(): Promise<FetchResult<Project[]>> {
+  try {
+    const projects = await fetchClient<Project[]>("/projects", {
+      method: "GET",
+    });
+
+    return [projects, null];
+  } catch (err) {
+    const msg = getErrorMessage(err);
+    console.error("Fetch projects Error:", msg);
+
+    return [null, msg];
   }
 }
