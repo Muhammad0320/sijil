@@ -1,6 +1,7 @@
 "use server";
 
 import { fetchClient } from "@/lib/client";
+import { getErrorMessage } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -39,12 +40,14 @@ export async function createProjectAction(
 
     revalidatePath("/");
     return { success: true, message: "Project created successfully" };
-  } catch (err: any) {
-    if (err.message.includes("409") || err.message.includes("Conflict")) {
+  } catch (err: unknown) {
+    const msg = getErrorMessage(err);
+
+    if (msg.includes("409") || msg.toLowerCase().includes("Conflict")) {
       return {
         errors: { name: ["You already have a project with this name."] },
       };
     }
-    return { errors: { _form: ["Failed to create project"] } };
+    return { errors: { _form: [msg] } };
   }
 }
