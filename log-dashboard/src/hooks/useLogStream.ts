@@ -1,11 +1,5 @@
+import { LogEntry } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
-
-export type LogEntry = {
-  timestamp: string;
-  level: string;
-  service: string;
-  message: string;
-};
 
 type ConnectionStatus = "CONNECTING" | "OPEN" | "CLOSED" | "ERROR";
 
