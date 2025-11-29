@@ -99,7 +99,7 @@ func (c *Client) writePump() {
 
 // Hub maintains the set of active clients and broadcast messages
 type Hub struct {
-
+	
 	rooms map[int]map[*Client]bool 
 	broadcast chan database.LogEntry
 	register chan *Client
