@@ -6,6 +6,7 @@ import (
 	"log"
 	"log-engine/internals/database"
 	"log-engine/internals/hub"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -24,6 +25,7 @@ type IngestionEngine struct {
 	Wal *WAL
 	hub *hub.Hub
 	LogQueue chan database.LogEntry
+	wg sync.WaitGroup
 }
 
 func NewIngestionEngine(db *pgxpool.Pool, wal *WAL, h *hub.Hub) *IngestionEngine {
@@ -36,15 +38,25 @@ func NewIngestionEngine(db *pgxpool.Pool, wal *WAL, h *hub.Hub) *IngestionEngine
 }
 
 func (e *IngestionEngine) Start(ctx context.Context) {
-
 	fmt.Printf("Staring ingesting engine with %d workers", WorkerCount)
+	
+	// Tell the Tracker how many workers we're hiring
+	e.wg.Add(WorkerCount)
 	for i := range WorkerCount {
 	  go e.worker(ctx, i)
 	}
+	
+}
 
+func (e *IngestionEngine) Shutdown() {
+	e.wg.Wait()
+
+	fmt.Println("All workers finished flushing ✅")
 }
 
 func (e *IngestionEngine) worker(ctx context.Context, id int) {
+
+	defer e.wg.Done()
 
 	batch := make([]database.LogEntry, 0, BatchSize)
 
