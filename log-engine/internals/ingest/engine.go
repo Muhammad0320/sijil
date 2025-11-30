@@ -15,7 +15,7 @@ import (
 const (
 	BatchSize     = 500
 	FlushInterval = 1 * time.Second
-	WorkerCount = 20
+	WorkerCount = 5
 	QueueSize = 10_000
 )
 
@@ -98,7 +98,7 @@ func (e *IngestionEngine) flush(ctx context.Context, batch []database.LogEntry) 
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-		log.Printf("⚠️ BATCH INSERT FAILED %w", err)
+		log.Printf("⚠️ BATCH INSERT FAILED %s", err)
 		return
 	}
 
