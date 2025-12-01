@@ -44,49 +44,25 @@ func main() {
 	}
 
 	fmt.Println("starting to tail test.log")
-	t, err := tail.TailFile(*filePtr, tail.Config{Follow: true})
+	t, err := tail.TailFile(*filePtr, tail.Config{Follow: true, ReOpen: true})
 	if err != nil {
 		log.Fatalf("Failed to tail file: %v", err)
 	}
 	
-	
-	for line := range t.Lines {
-		newLog := Log{}
+	// --- 	BATCHING CONFIG ----
+	var batch []Log
+	batchSize := 50 
+	flushInterval := 1 * time.Second
 
-		matches := logRegex.FindStringSubmatch(line.Text)
-		if matches == nil {
+	flush := func () {
+		if len(batch) == 0 {return} 
 
-			fmt.Println("Line didn't match pattern, sending as info")
-			newLog.Level = "info"
-			newLog.Message = line.Text
-			newLog.Service = *servicePtr
-		} else {
-			fmt.Println("Line matched! parsing...")
-			parsedTime, err := time.Parse(timeLayout, matches[1])
-			if err == nil {
-				newLog.Timestamp = parsedTime
-			}
-            
-			if matches[2] == ""{
-				newLog.Service = *servicePtr
-			} else {
-				newLog.Service = matches[2]
-			}
+		// Serialize the whole batch
+		jsonData, _ := json.Marshal(batch)
 
-			newLog.Level = matches[3]
-			newLog.Message = matches[4]
-		}
-
-		jsonData, err := json.Marshal(newLog)
-		if err != nil {
-			fmt.Printf("error marchaling json: %s", err)
-			continue
-		}
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", "http://localhost:8080/api/v1/logs", bytes.NewBuffer(jsonData))
+		req, err := http.NewRequest("POST", "http://localhost:8080/api/v1/logs", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Printf("Error creating request: %v\n", err)
-		continue
 	}
 	req.Header.Set("Content-Type", "application/json")
 
@@ -95,13 +71,57 @@ func main() {
 	
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("Error sending request: %v\n", err)
-		continue
+		fmt.Printf("Failed to send batch: %v\n", err)
+		
+	} else {
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+		fmt.Printf("✅ Sent batch of %d logs. Status: %d\n", len(batch))
 	}
-	
-	io.ReadAll(req.Body)
-	resp.Body.Close()
-	
-	fmt.Printf("Send log, server responded with status: %d\n", resp.StatusCode)
+
+	batch = batch[:0]
+}
+	ticker := time.NewTicker(flushInterval)
+	defer ticker.Stop()
+
+	for  {
+	   select {
+	   case line, ok := <- t.Lines:
+			if !ok {return}
+			
+			newLog := Log{}
+			matches := logRegex.FindStringSubmatch(line.Text)
+
+			if matches == nil {
+				newLog.Level = "info"
+				newLog.Message = line.Text
+				newLog.Service = *servicePtr
+			} else {
+
+				parsedTime, err := time.Parse(timeLayout, matches[1])
+				if err == nil {
+					newLog.Timestamp = parsedTime
+				}
+
+				if matches[2] == "" {
+					newLog.Service = *servicePtr
+				} else {
+					newLog.Service = matches[2]
+				}
+
+				newLog.Level = matches[3]
+				newLog.Message = matches[4]
+
+			}
+			batch = append(batch, newLog)
+
+			if len(batch) >= batchSize {
+				flush()
+			}
+			
+		case <- ticker.C: 
+			flush()
+	   }
 	}
+
 }
