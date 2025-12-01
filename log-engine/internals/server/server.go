@@ -99,27 +99,29 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 func (s *Server) handleLogIngest(c *gin.Context) {
 	ProjectID := c.GetInt("ProjectID")
 
-	var logEntry database.LogEntry
-	if err:= c.BindJSON(&logEntry); err != nil {
-		c.JSON(400, gin.H{"error": "bad request"})
+	var logEntries []database.LogEntry
+	if err:= c.BindJSON(&logEntries); err != nil {
+		c.JSON(400, gin.H{"error": "bad request; expected an array"})
 		return 
 	};
 
 	// Enrich 
-	 logEntry.ProjectID = ProjectID
-	 if logEntry.Timestamp.IsZero() {
-		logEntry.Timestamp = time.Now()
+	for _, entry := range logEntries {
+	 entry.ProjectID = ProjectID
+	 if entry.Timestamp.IsZero() {
+		entry.Timestamp = time.Now()
 	 }
 
 	//  WAL (DURABILITY)
-	 if err := s.ingestEngine.Wal.WriteLog(logEntry); err != nil {
+	 if err := s.ingestEngine.Wal.WriteLog(entry); err != nil {
 		c.JSON(500, gin.H{"error": "durability failure"})
 		return 
 	 }
 
-	 s.ingestEngine.LogQueue <- logEntry
+	 s.ingestEngine.LogQueue <- entry
 	 
 	c.JSON(202, gin.H{"message": "log received!"})
+	}
 }
 
 
