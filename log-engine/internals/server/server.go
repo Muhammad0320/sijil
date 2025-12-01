@@ -10,6 +10,7 @@ import (
 	"log-engine/internals/ingest"
 	"log-engine/internals/utils"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -91,11 +92,15 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 		protected.GET("logs/stats", s.handleGetStats)
 		protected.GET("logs/summary", s.handleGetSummary)
 		protected.GET("logs/ws", s.handleWsLogic)
-		protected.GET("/debug/vars", gin.WrapH(expvar.Handler()))
 	}
 	
 	// For the Loading Dock (Agent route)
-	apiv1.POST("/logs", s.apiKeyAuthMiddleware() ,s.handleLogIngest)
+	apiv1.POST("/logs", s.apiKeyAuthMiddleware(), s.handleLogIngest)
+
+	adminGroup := router.Group("/debug", gin.BasicAuth(gin.Accounts{
+		os.Getenv("ADMIN_USER"): os.Getenv("ADMIN_PASS"),
+	}))
+	adminGroup.GET("/vars", gin.WrapH(expvar.Handler()))
 }
 
 func (s *Server) handleLogIngest(c *gin.Context) {
@@ -119,14 +124,15 @@ func (s *Server) handleLogIngest(c *gin.Context) {
 	//  WAL (DURABILITY)
 	 if err := s.ingestEngine.Wal.WriteLog(entry); err != nil {
 		ingest.RecordError()
+		ingest.RecordDropped(1) 
 		c.JSON(500, gin.H{"error": "durability failure"})
 		return 
 	 }
 
 	 s.ingestEngine.LogQueue <- entry
-	 
-	c.JSON(202, gin.H{"message": "log received!"})
+	 ingest.RecordQueued(1)
 	}
+	c.JSON(202, gin.H{"message": "log received!"})
 }
 
 
