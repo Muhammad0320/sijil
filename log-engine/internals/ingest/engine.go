@@ -117,7 +117,7 @@ func (e *IngestionEngine) flush(ctx context.Context, batch []database.LogEntry) 
 	_, err := e.db.CopyFrom(
 		ctx, 
 		pgx.Identifier{"logs"},
-		[]string{"timestamp", "level", "message", "service", "prorject_id"},
+		[]string{"timestamp", "level", "message", "service", "project_id"},
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
