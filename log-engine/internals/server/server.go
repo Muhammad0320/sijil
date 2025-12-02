@@ -103,7 +103,7 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 }
 
 func (s *Server) handleLogIngest(c *gin.Context) {
-	ProjectID := c.GetInt("ProjectID")
+	ProjectID := c.GetInt("projectID")
 
 	fmt.Printf("DEBUG ------------------ : Handling logs for project ID: %d\n", ProjectID)
 
