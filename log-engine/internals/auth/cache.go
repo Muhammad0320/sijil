@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/sha256"
+	"fmt"
 	"log-engine/internals/database"
 	"sync"
 	"time"
@@ -67,6 +68,8 @@ func (c *AuthCache) ValidateAPIKey(ctx context.Context, apiKey, apiSecret string
 	if err != nil {
 		return 0, false
 	}
+
+	fmt.Println("See from auth cache -------------------")
 
 	// Step 3: Check secret (slow math)
 	if !ComparePasswordHash(apiKey, project.ApiSecretHash) {

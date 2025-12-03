@@ -98,8 +98,6 @@ func (s *Server) apiKeyAuthMiddleware() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid api secret"})
 		}
 
-		fmt.Println("--- Project ID:", project.ID)
-
 		c.Set("projectID", project.ID)
 		c.Next()
 	}
