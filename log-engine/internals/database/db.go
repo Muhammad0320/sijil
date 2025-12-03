@@ -175,7 +175,17 @@ func InsertLog(ctx context.Context, db *pgxpool.Pool, log LogEntry) error {
 
 func GetLogs(ctx context.Context, db *pgxpool.Pool,  projectID ,limit, offset int, searchQuery string) ([]LogEntry, error) { 
 
-	args := make([]interface{}, 0)
+	// 1. Safety: clamp limit
+	const MaxLimit = 1000
+	if limit > MaxLimit {
+		limit = MaxLimit
+	}
+
+	// 2.Enforce a db timeout
+	ctx, cancel := context.WithTimeout(ctx, 3 *time.Second)
+	defer cancel()
+
+	args := make([]any, 0)
 	argsCounter := 1
 
 	var queryBuilder strings.Builder

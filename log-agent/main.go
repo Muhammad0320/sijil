@@ -65,8 +65,6 @@ func main() {
 	batchSize := 50 
 	flushInterval := 1 * time.Second
 
-
-
 	flush := func () {
 		if len(batch) == 0 {return} 
 

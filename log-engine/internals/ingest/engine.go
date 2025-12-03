@@ -132,6 +132,7 @@ func (e *IngestionEngine) flush(ctx context.Context, batch []database.LogEntry) 
 
 	RecordFlushed(len(batch))
 
+	
 	for _, row := range batch {
 		e.hub.BroadcastLog(row)
 	}
