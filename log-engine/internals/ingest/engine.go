@@ -126,7 +126,11 @@ func (e *IngestionEngine) flush(ctx context.Context, batch []database.LogEntry) 
 		return
 	}
 
-	mFlushed.Add(int64(len(batch)))
+	if err := e.Wal.Clear(); err != nil {
+		log.Printf("⚠️ WAL clear failed: %v", err)
+	}
+
+	RecordFlushed(len(batch))
 
 	for _, row := range batch {
 		e.hub.BroadcastLog(row)

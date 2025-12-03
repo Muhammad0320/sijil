@@ -122,13 +122,14 @@ func (s *Server) handleLogIngest(c *gin.Context) {
 	 }
 	}
 
+	fmt.Println("The WAL is removed ------")
 	//  WAL (DURABILITY)
-	 if err := s.ingestEngine.Wal.WriteBatch(logEntries); err != nil {
-		ingest.RecordError()
-		ingest.RecordDropped(1) 
-		c.JSON(500, gin.H{"error": "durability failure"})
-		return 
-	 }
+	//  if err := s.ingestEngine.Wal.WriteBatch(logEntries); err != nil {
+	// 	ingest.RecordError()
+	// 	ingest.RecordDropped(1) 
+	// 	c.JSON(500, gin.H{"error": "durability failure"})
+	// 	return 
+	//  }
 
 	 for _, entry := range logEntries {
 		 s.ingestEngine.LogQueue <- entry 
