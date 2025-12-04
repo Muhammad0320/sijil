@@ -532,5 +532,9 @@ func GetProjectRole(ctx context.Context, db *pgxpool.Pool, userID, projectID int
 
 	err := db.QueryRow(ctx, `SELECT role FROM project_members WHERE user_id = $1 AND project_id = $2`, userID, projectID).Scan(&role)
 
-	return role, err
+	if err != nil {
+		return role, fmt.Errorf("failed to get user's project role: %w", err)
+	}
+
+	return role, nil 
 }
