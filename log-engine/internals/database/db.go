@@ -477,3 +477,17 @@ func GetUserPlan(ctx context.Context, db *pgxpool.Pool, userID int) (string, err
 	return  plan, err
 }
 
+func CheckProjectAccess(ctx context.Context, db *pgxpool.Pool, userID, projectID int) (bool, error) {
+	var exists bool 
+
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM projects WHERE id = $1 AND user_id $2
+			UNION 
+			SELECT 1 FROM project_members WHERE project_id = $1 AND user_id = $2
+		)
+	`
+	err := db.QueryRow(ctx, query, projectID, userID).Scan(&exists)
+
+	return  exists, err
+}
