@@ -69,6 +69,8 @@ func ParseTime(c *gin.Context) (time.Time, time.Time) {
 var validate = validator.New()
 
 func (s *Server) registerRoutes(router *gin.Engine) {
+	router.Use(s.DogFoodMiddleware())
+
 
 	apiv1 := router.Group("/api/v1")
 	authGroup := apiv1.Group("/auth")

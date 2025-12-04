@@ -432,3 +432,22 @@ func GetlogSummary(ctx context.Context, db *pgxpool.Pool, projectID int, fromTim
 
 	return summary, nil 
 }
+
+func RunRetentionPolicy(ctx context.Context, db *pgxpool.Pool) {
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+	
+	for {
+		select {
+		case <- ticker.C: 
+			_, err := db.Exec(ctx, "SELECT drop_chunk('logs', INTERVAL '3 days');")
+			if err != nil {
+				fmt.Printf("⚠️ Retention Policy failed: %v\n", err)
+			} else {
+				fmt.Println("🧹 Retention policy Ran: Cleared logs > 3 days old.")
+			}
+		case <- ctx.Done(): 
+			return
+		}
+	}
+}
