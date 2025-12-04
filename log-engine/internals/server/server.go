@@ -160,7 +160,7 @@ func (s *Server) handleGetLogs(c *gin.Context)  {
 	}
 
 	// Security check: Does this user own this project
-	isOwner, err := database.CheckProjectIDOwners(c.Request.Context(), s.db, userID.(int), projectID)
+	isOwner, err := database.CheckProjectAccess(c.Request.Context(), s.db, userID.(int), projectID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "server error checking ownership"})
 		return
@@ -219,7 +219,7 @@ func (s *Server) handleWsLogic(c *gin.Context) {
 		return
 	}
 
-	isOwner, err := database.CheckProjectIDOwners(c.Request.Context(), s.db, userID.(int), projectID)
+	isOwner, err := database.CheckProjectAccess(c.Request.Context(), s.db, userID.(int), projectID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "internal error"})
 		return 
@@ -237,7 +237,8 @@ func (s *Server) handleWsLogic(c *gin.Context) {
 func (s *Server) handleUserRegister(c *gin.Context) {
 
 	var req struct {
-		Name string `json:"name" validate:"required,min=2"`
+		FirstName string `json:"firstname" validate:"required,min=2"`
+		LastName string `json:"lastname" validate:"required,min=2"`
 		Email string `json:"email" validate:"required,email"`
 		Password string `json:"password" validate:"required,min=8"`
 	}
@@ -382,7 +383,7 @@ func (s *Server) handleGetStats(c *gin.Context) {
 	projectIDStr := c.Query("project_id")
 	projectID, _ := strconv.Atoi(projectIDStr)
 
-	isOwner, err := database.CheckProjectIDOwners(c.Request.Context(), s.db, userID.(int), projectID) 
+	isOwner, err := database.CheckProjectAccess(c.Request.Context(), s.db, userID.(int), projectID) 
 	if err != nil {
 		c.JSON(500, gin.H{"error": "error checking user's project ownership"})
 		return
@@ -423,7 +424,7 @@ func (s *Server) handleGetSummary(c *gin.Context) {
 	projectIDStr := c.Query("project_id")
 	projectID, _ := strconv.Atoi(projectIDStr)
 
-	isOwner, _ := database.CheckProjectIDOwners(c.Request.Context(), s.db, userID.(int), projectID)
+	isOwner, _ := database.CheckProjectAccess(c.Request.Context(), s.db, userID.(int), projectID)
 	if !isOwner {
 		c.JSON(403, gin.H{"error": "forbidden"})
 		return

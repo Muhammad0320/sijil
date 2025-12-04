@@ -250,12 +250,12 @@ type User struct {
 	PasswordHash string
 }
 
-func CreateUser(ctx context.Context, db *pgxpool.Pool, name, email, hashpassword string) (int, error) {
+func CreateUser(ctx context.Context, db *pgxpool.Pool, firstname, lastname, email, hashpassword string) (int, error) {
 
 	var newUserID int 
 	err := db.QueryRow(ctx, 
-		`INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id`,
-		name, email, hashpassword,
+		`INSERT INTO users (firstname, lastname, email, password_hash) VALUES ($1, $2, $3) RETURNING id`,
+		firstname, lastname, email, hashpassword,
 	).Scan(&newUserID)
 
 	if err != nil {
