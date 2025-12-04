@@ -71,7 +71,6 @@ var validate = validator.New()
 func (s *Server) registerRoutes(router *gin.Engine) {
 	router.Use(s.DogFoodMiddleware())
 
-
 	apiv1 := router.Group("/api/v1")
 	authGroup := apiv1.Group("/auth")
 	{
@@ -186,8 +185,15 @@ func (s *Server) handleGetLogs(c *gin.Context)  {
 
    serachQuery := c.DefaultQuery("q", "")
 
-	ctx := c.Request.Context()
-	logs, err := database.GetLogs(ctx, s.db, projectID ,limit, offset, serachQuery)
+   ctx := c.Request.Context()
+   plan, _ := database.GetUserPlan(ctx, s.db, userID.(int))
+
+   retention := 3 
+   if plan == "pro" || plan == "ultra" {
+	retention = 30
+   }
+
+	logs, err := database.GetLogs(ctx, s.db, projectID ,limit, offset, serachQuery, retention)
 	if err != nil {
 		fmt.Printf("Failed to get logs: %v\n", err)
 
