@@ -47,14 +47,15 @@ func CreateSchema(ctx context.Context, db *pgxpool.Pool) error {
 	createUserTableSQL := `
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    firstname VARCHAR(255) NOT NULL,
+    lastname VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     avatar_url TEXT,
+	plan VARCHAR(50) NOT NULL DEFAULT 'free',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 `
-
 	_, err = db.Exec(ctx, createUserTableSQL)
 	if err != nil {
 		return  fmt.Errorf("failed to create 'users' table :%w ", err)
@@ -436,15 +437,15 @@ func GetlogSummary(ctx context.Context, db *pgxpool.Pool, projectID int, fromTim
 func RunRetentionPolicy(ctx context.Context, db *pgxpool.Pool) {
 	ticker := time.NewTicker(24 * time.Hour)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <- ticker.C: 
-			_, err := db.Exec(ctx, "SELECT drop_chunk('logs', INTERVAL '3 days');")
+			_, err := db.Exec(ctx, "SELECT drop_chunks('logs', INTERVAL '30 days');")
 			if err != nil {
-				fmt.Printf("⚠️ Retention Policy failed: %v\n", err)
+				fmt.Printf("⚠️ Global Retention Policy failed: %v\n", err)
 			} else {
-				fmt.Println("🧹 Retention policy Ran: Cleared logs > 3 days old.")
+				fmt.Println("🧹 Global Retention policy Ran: Cleared logs > 30 days old.")
 			}
 		case <- ctx.Done(): 
 			return

@@ -24,17 +24,21 @@ func (s *Server) DogFoodMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now() 
 		path := c.Request.URL.Path
+		method := c.Request.Method
 
-		if path == "/api/v1/logs" {
+		if method == "POST" && path == "/api/v1/logs" {
 			c.Next()
 			return 
 		}
 
 		c.Next()
 
+		if internalPID == 0 {
+			return 
+		}
+
 		latency := time.Since(start)
 		clientIP := c.ClientIP()
-		method := c.Request.Method
 		status := c.Writer.Status()
 
 		// Smart level detection
