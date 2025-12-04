@@ -69,6 +69,7 @@ func ParseTime(c *gin.Context) (time.Time, time.Time) {
 var validate = validator.New()
 
 func (s *Server) registerRoutes(router *gin.Engine) {
+	router.Use(s.SecurityHeadersMiddleware()) 
 	router.Use(s.DogFoodMiddleware())
 
 	apiv1 := router.Group("/api/v1")
@@ -439,4 +440,39 @@ func (s *Server) handleGetSummary(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"summary": summary})
+}
+
+func (s *Server) handleAddMember(c *gin.Context) {
+
+	userID := c.GetInt("UserID")
+	projectIDStr := c.Param("id")
+	projectID, _ := strconv.Atoi(projectIDStr)
+
+	role, _ := database.GetProjectRole(c.Request.Context(), s.db, userID, projectID)
+
+	if role != "owner" || role != "admin" {
+		c.JSON(403, gin.H{"error": "only admins can invite members"})
+		return
+	}
+
+	plan, _ := database.GetUserPlan(c.Request.Context(), s.db, userID)
+
+	// Check plan limit
+	count, _ := database.GetMemberCountByProjectID(c.Request.Context(), s.db, projectID) 
+	
+	if database.GetPlanLimits(plan).MaxMemebers >= count {
+		// I don't know the right status code to send
+		c.JSON(400, gin.H{"error": fmt.Sprintf("You've reached you limit of %d members! kindly unpgrade your plan.", count)})
+	}
+
+	// Add member
+	var req struct { Email string `json:"email"`; Role string `json:"role"` }
+    c.BindJSON(&req)
+    
+    if err := database.AddProjectMember(c.Request.Context(), s.db, projectID, req.Email, req.Role); err != nil {
+        c.JSON(500, gin.H{"error": "failed to add member"})
+        return
+    }
+    c.JSON(200, gin.H{"message": "member invited"})
+
 }
