@@ -97,3 +97,21 @@ func (s *Server) apiKeyAuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func (s *Server) SecurityHeadersMiddleware() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		// Prevent clicking jacking
+		c.Header("X-Frame-Options", "Deny")
+		// Stop browserd from guessing content type
+		c.Header("X-Content-Type-Options", "nosniff")
+		// Enable XSS protection filter in older browsers
+		c.Header("X-XSS-Protection", "1; mode=block")
+		
+		// Enforce HTTPS (Strict transport Securoty) - Important for Production
+		// c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+
+		c.Next()
+	}
+
+} 
