@@ -87,6 +87,7 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 		// Projects
 		protected.POST("/projects", s.handleCreateProject)
 		protected.GET("/projects", s.handleListProjects)
+		protected.GET("/projects/:id/members", s.handleAddMember)
 
 		// Logs
 		protected.GET("logs", s.handleGetLogs)
