@@ -259,7 +259,7 @@ func (s *Server) handleUserRegister(c *gin.Context) {
 		return 
 	}
 
-	newUserId, err := database.CreateUser(c.Request.Context(), s.db, req.Name, req.Email, hash)
+	newUserId, err := database.CreateUser(c.Request.Context(), s.db, req.FirstName, req.LastName, req.Email, hash)
 	if err != nil {
 		if errors.Is(err, database.EmailExists) {
 			c.JSON(http.StatusConflict, gin.H{"error": "409 Confilict: this email is already registered"})

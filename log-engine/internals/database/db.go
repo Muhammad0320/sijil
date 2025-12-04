@@ -491,3 +491,17 @@ func CheckProjectAccess(ctx context.Context, db *pgxpool.Pool, userID, projectID
 
 	return  exists, err
 }
+
+
+func AddProjectMember(ctx context.Context, db *pgxpool.Pool, projectID int, email, role string) error {
+
+	user, err := GetUserByEmail(ctx, db, email)
+	if err != nil {
+		return  fmt.Errorf("User not found")
+	}
+
+	_, err = db.Exec(ctx, `INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, projectID, user.ID, role)
+	
+	return  err
+	
+}
