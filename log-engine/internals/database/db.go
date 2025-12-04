@@ -525,12 +525,12 @@ func AddProjectMember(ctx context.Context, db *pgxpool.Pool, projectID int, emai
 	_, err = db.Exec(ctx, `INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, projectID, user.ID, role)
 	
 	return  err
-	
 }
 
 func GetProjectRole(ctx context.Context, db *pgxpool.Pool, userID, projectID int) (string, error) {
+	var role string
 
-	user, err := GetUserByEmail(ctx, db, )
-	
+	err := db.QueryRow(ctx, `SELECT role FROM project_members WHERE user_id = $1 AND project_id = $2`, userID, projectID).Scan(&role)
 
+	return role, err
 }
