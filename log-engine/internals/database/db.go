@@ -528,12 +528,17 @@ func AddProjectMember(ctx context.Context, db *pgxpool.Pool, projectID int, emai
 }
 
 func GetProjectRole(ctx context.Context, db *pgxpool.Pool, userID, projectID int) (string, error) {
+
+	var isOwner bool 
+	err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1 AND user_id = $2)`, projectID, userID).Scan(&isOwner)
+	if err == nil && isOwner {
+		return "ownwe", nil
+	}
+    
 	var role string
-
-	err := db.QueryRow(ctx, `SELECT role FROM project_members WHERE user_id = $1 AND project_id = $2`, userID, projectID).Scan(&role)
-
+	err = db.QueryRow(ctx, `SELECT role FROM project_members WHERE user_id = $1 AND project_id = $2`, userID, projectID).Scan(&role)
 	if err != nil {
-		return role, fmt.Errorf("failed to get user's project role: %w", err)
+		return "", fmt.Errorf("failed to get user's project role: %w", err)
 	}
 
 	return role, nil 
