@@ -532,7 +532,7 @@ func GetProjectRole(ctx context.Context, db *pgxpool.Pool, userID, projectID int
 	var isOwner bool 
 	err := db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1 AND user_id = $2)`, projectID, userID).Scan(&isOwner)
 	if err == nil && isOwner {
-		return "ownwe", nil
+		return "owner", nil
 	}
     
 	var role string
@@ -556,9 +556,9 @@ func GetMemberCountByProjectID(ctx context.Context, db *pgxpool.Pool, projectID 
 
 func GetProjectCountByUserID(ctx context.Context, db *pgxpool.Pool, userID int) (int, error) {
 	var count int 
-	err := db.QueryRow(ctx, `SELECT COUNT(*) FROM projects WHERE user_id = $1`, userID)
+	err := db.QueryRow(ctx, `SELECT COUNT(*) FROM projects WHERE user_id = $1`, userID).Scan(&count)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get projects count: %w", err)
+		return 0, fmt.Errorf("failed to get projects count: %s", err)
 	} 
 
 	return count, nil 
