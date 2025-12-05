@@ -462,7 +462,7 @@ func (s *Server) handleAddMember(c *gin.Context) {
 
 	role, _ := database.GetProjectRole(c.Request.Context(), s.db, userID, projectID)
 
-	if role != "owner" || role != "admin" {
+	if role != "owner" && role != "admin" {
 		c.JSON(403, gin.H{"error": "only admins can invite members"})
 		return
 	}
