@@ -344,6 +344,7 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 	secretHash, err := auth.HashPasswod(apiSecret)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to secure peoject keys"})
+		return
 	}
 
 		plan, _ := database.GetUserPlan(c.Request.Context(), s.db, userID.(int))
@@ -354,6 +355,7 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 	if database.GetPlanLimits(plan).MaxProject >= count {
 		// I don't know the right status code to send
 		c.JSON(400, gin.H{"error": fmt.Sprintf("You've reached you limit of %d members! kindly unpgrade your plan.", count)})
+		return
 	}
 
 

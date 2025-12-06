@@ -1,1 +1,0 @@
-{"timestamp":"2025-12-06T05:11:33.8924204+01:00","level":"error","message":"[500] POST /api/v1/auth/register | 112.0041ms | IP: ::1 | UA: PostmanRuntime/7.39.1","service":"log-engine-internal"}
