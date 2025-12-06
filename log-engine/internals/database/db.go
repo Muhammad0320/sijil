@@ -522,8 +522,16 @@ func AddProjectMember(ctx context.Context, db *pgxpool.Pool, projectID int, emai
 		return  fmt.Errorf("User not found")
 	}
 
-	_, err = db.Exec(ctx, `INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, projectID, user.ID, role)
-	
+	commandTag, err := db.Exec(ctx, `INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, projectID, user.ID, role)
+
+	if err != nil {
+		return fmt.Errorf("failed to add project member: %w", err)
+	}
+
+	if commandTag.RowsAffected() == 0 {
+		return fmt.Errorf("user is already a member")
+	}
+
 	return  err
 }
 
@@ -562,4 +570,44 @@ func GetProjectCountByUserID(ctx context.Context, db *pgxpool.Pool, userID int) 
 	} 
 
 	return count, nil 
+}
+
+type ProjectMember struct {
+	UserID int `json:"user_id"`
+	ProjectID int `json:"project_id"`
+	Role string `json:"role"`
+	JoinedAt time.Time `json:"joined_at"`
+	// Avatar might be needed in the future
+}
+
+func GetProjectMembers(ctx context.Context, db *pgxpool.Pool, projectID int) ([]ProjectMember, error) {
+	var members []ProjectMember
+	
+	queryUnion := `
+        SELECT u.id, u.email, 'owner' as role, p.created_at as joined_at
+        FROM projects p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.id = $1
+        UNION ALL
+        SELECT pm.user_id, u.email, pm.role, pm.joined_at
+        FROM project_members pm
+        JOIN users u ON pm.user_id = u.id
+        WHERE pm.project_id = $1
+    `
+	rows, err := db.Query(ctx, queryUnion, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project members: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var member ProjectMember
+		err := rows.Scan(&member.UserID, &member.ProjectID, &member.Role, &member.JoinedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan project member: %w", err)
+		}
+		members = append(members, member)
+	}
+
+	return members, nil
 }
