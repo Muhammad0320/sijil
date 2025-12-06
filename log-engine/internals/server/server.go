@@ -87,7 +87,8 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 		// Projects
 		protected.POST("/projects", s.handleCreateProject)
 		protected.GET("/projects", s.handleListProjects)
-		protected.GET("/projects/:id/members", s.handleAddMember)
+		protected.POST("/projects/:id/members", s.handleAddMember)
+		protected.GET("/projects/:id/members", s.handleGetMembers)
 
 		// Logs
 		protected.GET("logs", s.handleGetLogs)
@@ -508,7 +509,6 @@ func (s *Server) handleGetMembers(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "failed to fetch members"})
 		return
 	}
-
 
 	c.JSON(200, gin.H{"members": members})
 }
