@@ -490,3 +490,25 @@ func (s *Server) handleAddMember(c *gin.Context) {
     }
     c.JSON(200, gin.H{"message": "member invited"})
 }
+
+
+func (s *Server) handleGetMembers(c *gin.Context) {
+	userID := c.GetInt("userID")
+	projectIDStr := c.Param("id")
+	projectID, _ := strconv.Atoi(projectIDStr)
+	
+	hasAccess, _ := database.CheckProjectAccess(c.Request.Context(), s.db, userID, projectID)
+	if !hasAccess {
+		c.JSON(403, gin.H{"error": "Forbidden"})
+		return
+	}
+
+	members, err := database.GetProjectMembers(c.Request.Context(), s.db, projectID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to fetch members"})
+		return
+	}
+
+
+	c.JSON(200, gin.H{"members": members})
+}
