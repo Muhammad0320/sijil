@@ -347,12 +347,12 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 		return
 	}
 
-		plan, _ := database.GetUserPlan(c.Request.Context(), s.db, userID.(int))
+	plan, _ := database.GetUserPlan(c.Request.Context(), s.db, userID.(int))
 
 	// Check plan limit
 	count, _ := database.GetProjectCountByUserID(c.Request.Context(), s.db, userID.(int))
 	
-	if database.GetPlanLimits(plan).MaxProject >= count {
+	if count >= database.GetPlanLimits(plan).MaxProject {
 		// I don't know the right status code to send
 		c.JSON(400, gin.H{"error": fmt.Sprintf("You've reached you limit of %d members! kindly unpgrade your plan.", count)})
 		return
