@@ -218,8 +218,8 @@ func GetLogs(ctx context.Context, db *pgxpool.Pool,  projectID ,limit, offset in
 		args = append(args, searchQuery)
 		argsCounter++
 	}
-	queryBuilder.WriteString(fmt.Sprintf(" TIMESTAMP > NOW() - INTERVAL '%d days'", retentionDays))
-
+	queryBuilder.WriteString(fmt.Sprintf(" AND timestamp > NOW() - INTERVAL '%d days'", retentionDays))
+    
 	queryBuilder.WriteString(fmt.Sprintf(" ORDER BY timestamp DESC LIMIT $%d OFFSET $%d", argsCounter, argsCounter+1))
 	args = append(args, limit, offset)
 
@@ -504,7 +504,7 @@ func CheckProjectAccess(ctx context.Context, db *pgxpool.Pool, userID, projectID
 
 	query := `
 		SELECT EXISTS (
-			SELECT 1 FROM projects WHERE id = $1 AND user_id $2
+			SELECT 1 FROM projects WHERE id = $1 AND user_id = $2
 			UNION 
 			SELECT 1 FROM project_members WHERE project_id = $1 AND user_id = $2
 		)
