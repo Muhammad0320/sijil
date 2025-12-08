@@ -16,6 +16,12 @@ export type CreateProjectState = {
   errors?: { name?: string[]; _form?: string[] };
   message?: string;
   success?: boolean;
+
+  data?: {
+    apiKey: string;
+    apiSecret: string;
+    projectId: number;
+  };
 };
 
 export async function createProjectAction(
@@ -33,13 +39,26 @@ export async function createProjectAction(
   }
 
   try {
-    await fetchClient("/projects", {
+    const res = await fetchClient<{
+      message: string;
+      project_id: number;
+      api_key: string;
+      api_secret: string;
+    }>("/projects", {
       method: "POST",
       body: JSON.stringify({ name: validated.data.name }),
     });
 
     revalidatePath("/");
-    return { success: true, message: "Project created successfully" };
+    return {
+      success: true,
+      message: "Project created successfully",
+      data: {
+        apiKey: res.api_key,
+        apiSecret: res.api_secret,
+        projectId: res.project_id,
+      },
+    };
   } catch (err: unknown) {
     const msg = getErrorMessage(err);
 
