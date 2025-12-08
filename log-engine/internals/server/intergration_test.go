@@ -8,6 +8,7 @@ import (
 	"log-engine/internals/auth"
 	"log-engine/internals/database"
 	"log-engine/internals/hub"
+	"log-engine/internals/ingest"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,7 +20,7 @@ import (
 // Helper to setup a fresh server and clean DB for testing
 func setupTestServer(t *testing.T) *Server {
 	// 1. Load Env (or hardcode for test)
-	_ = godotenv.Load("../../.env") // Adjust path to root .env
+	_ = godotenv.Load("../../.env")
 	
 	dbPassword := os.Getenv("DB_PASSWORD")
 	if dbPassword == "" { dbPassword = "logpassword123" }
@@ -45,7 +46,7 @@ func setupTestServer(t *testing.T) *Server {
 	// We don't need a real WAL for RBAC testing, but the engine needs one
 	// Create a temp file
 	tmpWal, _ := os.CreateTemp("", "test_wal")
-	wal, _ := ingest.NewWAL(tmpWal.Name())
+	wal, _ := ingest.NewWal(tmpWal.Name())
 	engine := ingest.NewIngestionEngine(db, wal, h)
 	authCache := auth.NewAuthCache(db)
 	
@@ -92,11 +93,6 @@ func TestRBAC_EndToEnd(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &viewerAuth)
 
 	// --- 2. CREATE PROJECT (As Admin) ---
-	w = makeRequest(s, "POST", "/api/v1/api/v1/projects", adminAuth.Token, map[string]string{
-		"name": "Death Star Logs",
-	})
-	// Note: Check your route group nesting. In my previous code it might be /api/v1/projects or /api/v1/api/v1/projects depending on how you grouped it.
-	// Assuming it's /api/v1/projects based on the fix:
 	w = makeRequest(s, "POST", "/api/v1/projects", adminAuth.Token, map[string]string{
 		"name": "Death Star Logs",
 	})
