@@ -1,14 +1,13 @@
-import { AuthLink } from "@/components/features/auth/AuthCompoents";
+import { StyledAuthLink } from "@/components/features/auth/AuthCompoents";
 import LoginForm from "@/components/features/auth/LoginForm";
-import Link from "next/link";
 
 export default function LoginPage() {
   return (
     <>
       <LoginForm />
-      <Link href="/register" passHref legacyBehavior>
-        <AuthLink>Don`&apos;`t have an account? Create one</AuthLink>
-      </Link>
+      <StyledAuthLink href={"/register"}>
+        Don`&apos;`t have an account? Create one
+      </StyledAuthLink>
     </>
   );
 }

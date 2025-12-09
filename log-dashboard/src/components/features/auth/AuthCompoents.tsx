@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import styled, { keyframes } from "styled-components";
 
 const float = keyframes`
@@ -48,7 +49,7 @@ export const AuthTitle = styled.h1`
   -webkit-text-fill-color: transparent;
 `;
 
-export const AuthLink = styled.a`
+export const StyledAuthLink = styled(Link)`
   display: block;
   text-align: center;
   margin-top: 24px;
