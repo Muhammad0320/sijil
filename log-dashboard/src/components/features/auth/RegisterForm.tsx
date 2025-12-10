@@ -2,10 +2,10 @@
 
 import { useActionState, useState } from "react";
 import { registerAction } from "@/actions/auth";
-import { AuthFormState, RegisterFormState } from "@/lib/definitions";
+import { RegisterFormState } from "@/lib/definitions";
 import { FieldError, GlobalError } from "@/components/ui/formErrors";
 import { BorderBeamButton } from "@/components/ui/borderBeamButton";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Lock } from "lucide-react";
 import {
   Form,
   FormGroup,
@@ -74,6 +74,21 @@ export default function RegisterForm() {
           </TogglePasswordBtn>
         </InputWrapper>
         <FieldError errors={state.errors?.password} />
+      </FormGroup>
+
+      <FormGroup>
+        <Label htmlFor="confirmPassword">Confirm Password</Label>
+        <InputWrapper>
+          <Lock size={16} />
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type={showPassword ? "text" : "password"}
+            placeholder="••••••••"
+            $hasError={!!state.errors?.confirmPassword}
+          />
+        </InputWrapper>
+        <FieldError errors={state.errors?.confirmPassword} />
       </FormGroup>
 
       <div style={{ marginTop: "16px" }}>

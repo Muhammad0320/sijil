@@ -1,6 +1,6 @@
-import { RegisterFormState } from "./../lib/definitions";
-("use server");
+"use server";
 
+import { RegisterFormState } from "./../lib/definitions";
 import { fetchClient } from "@/lib/client";
 import {
   AuthFormState,
