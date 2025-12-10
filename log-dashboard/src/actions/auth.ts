@@ -41,7 +41,6 @@ export async function loginAction(
     await setSession(data.token);
   } catch (error) {
     console.log(error);
-    console.log("It should definitely be from you bitch, -----------");
     if (error instanceof Error) {
       return {
         errors: {
@@ -62,9 +61,9 @@ export async function registerAction(
   prevState: RegisterFormState,
   formData: FormData
 ): Promise<RegisterFormState> {
-  console.log("Are you here? -----");
   const validatedRegisterSchema = RegisterFormSchema.safeParse({
-    name: formData.get("name"),
+    firstname: formData.get("firstname"),
+    lastname: formData.get("lastname"),
     email: formData.get("email"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
@@ -76,12 +75,12 @@ export async function registerAction(
     };
   }
 
-  const { name, email, password } = validatedRegisterSchema.data;
+  const { firstname, lastname, email, password } = validatedRegisterSchema.data;
 
   try {
     const data = await fetchClient<AuthResponse>("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ firstname, lastname, email, password }),
     });
 
     await setSession(data.token);

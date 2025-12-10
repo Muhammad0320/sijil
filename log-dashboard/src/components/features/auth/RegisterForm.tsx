@@ -30,15 +30,27 @@ export default function RegisterForm() {
       <GlobalError errors={state.errors?._form} />
 
       <FormGroup>
-        <Label htmlFor="name">Full Name</Label>
+        <Label htmlFor="firstname">Firstname</Label>
         <Input
-          name="name"
-          autoComplete="name"
+          name="firstname"
+          autoComplete="firstname"
           type="text"
-          placeholder="Han Solo"
-          $hasError={!!state.errors?.name}
+          placeholder="Muhammad"
+          $hasError={!!state.errors?.firstname}
         />
-        <FieldError errors={state.errors?.name} />
+        <FieldError errors={state.errors?.firstname} />
+      </FormGroup>
+
+      <FormGroup>
+        <Label htmlFor="lastname">Lastname</Label>
+        <Input
+          name="lastname"
+          autoComplete="lastname"
+          type="text"
+          placeholder="Abdullah"
+          $hasError={!!state.errors?.lastname}
+        />
+        <FieldError errors={state.errors?.lastname} />
       </FormGroup>
 
       <FormGroup>
@@ -81,6 +93,7 @@ export default function RegisterForm() {
       <FormGroup>
         <Label htmlFor="confirmPassword">Confirm Password</Label>
         <InputWrapper>
+          <Lock size={16} />
           <Input
             id="confirmPassword"
             name="confirmPassword"

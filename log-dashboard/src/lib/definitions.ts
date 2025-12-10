@@ -27,7 +27,11 @@ export const LoginFormSchema = z.object({
 
 export const RegisterFormSchema = z
   .object({
-    name: z
+    firstname: z
+      .string()
+      .min(2, { error: "Name must be at least 2 characters long" })
+      .trim(),
+    lastname: z
       .string()
       .min(2, { error: "Name must be at least 2 characters long" })
       .trim(),
@@ -51,7 +55,8 @@ export const RegisterFormSchema = z
 
 export type RegisterFormState = {
   errors?: {
-    name?: string[];
+    firstname?: string[];
+    lastname?: string[];
     email?: string[];
     password?: string[];
     confirmPassword?: string[];
