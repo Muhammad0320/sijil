@@ -5,7 +5,7 @@ interface ApiError {
 }
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8080/api/v1";
 
 export async function fetchClient<T>(
   endpoint: string,
@@ -22,6 +22,7 @@ export async function fetchClient<T>(
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
+    cache: options.cache || "no-cache",
   });
 
   let data: unknown;

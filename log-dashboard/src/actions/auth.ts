@@ -40,6 +40,8 @@ export async function loginAction(
 
     await setSession(data.token);
   } catch (error) {
+    console.log(error);
+    console.log("It should definitely be from you bitch, -----------");
     if (error instanceof Error) {
       return {
         errors: {
