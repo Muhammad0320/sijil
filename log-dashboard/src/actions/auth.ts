@@ -38,9 +38,10 @@ export async function loginAction(
       body: JSON.stringify({ email, password }),
     });
 
+    console.log(data, "---- From SA");
+
     await setSession(data.token);
   } catch (error) {
-    console.log(error);
     if (error instanceof Error) {
       return {
         errors: {
@@ -53,8 +54,8 @@ export async function loginAction(
     };
   }
 
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
 }
 
 export async function registerAction(
@@ -97,5 +98,5 @@ export async function registerAction(
     };
   }
 
-  redirect("/");
+  redirect("/dashboard");
 }

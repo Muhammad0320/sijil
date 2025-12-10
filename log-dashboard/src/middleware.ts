@@ -9,6 +9,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/register");
 
+  console.log(session);
+
   if (!session) {
     if (!isAuthPage) {
       return NextResponse.redirect(new URL("/login", request.url));
@@ -18,7 +20,7 @@ export async function middleware(request: NextRequest) {
 
   try {
     const secret = new TextEncoder().encode(
-      process.env.JWT_KEY || "my_super_long_jwt_secret_key_for_log_engine"
+      process.env.JWT_SECRET || "my_super_long_jwt_secret_key_for_log_engine"
     );
 
     await jwtVerify(session, secret);
