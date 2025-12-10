@@ -4,15 +4,16 @@ import { NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const session = request.cookies.get("session")?.value;
+  const path = request.nextUrl.pathname;
 
-  const isAuthPage =
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/register");
+  const isAuthPage = path.startsWith("/login") || path.startsWith("/register");
+  const isDashboard = path.startsWith("/dashboard");
+  const isRoot = path === "/";
 
   console.log(session);
 
   if (!session) {
-    if (!isAuthPage) {
+    if (!isDashboard) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
     return NextResponse.next();
@@ -23,17 +24,19 @@ export async function middleware(request: NextRequest) {
       process.env.JWT_SECRET || "my_super_long_jwt_secret_key_for_log_engine"
     );
 
-    await jwtVerify(session, secret);
+    await jwtVerify(session, secret, {
+      clockTolerance: 30,
+    });
 
-    if (isAuthPage) {
+    if (isAuthPage || isRoot) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     return NextResponse.next();
   } catch (error) {
-    const response = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.delete("session");
-    return response;
+    console.log(error, "middle------------");
+    console.error("🔒 Auth Failed:", error);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 }
 
