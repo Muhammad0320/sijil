@@ -1,38 +1,32 @@
 "use client";
 
 import styled, { keyframes } from "styled-components";
-import {
-  ArrowRight,
-  Database,
-  Zap,
-  Shield,
-  Cpu,
-  Activity,
-  Server,
-} from "lucide-react";
+import { ArrowRight, Database, Zap, Shield, Cpu, Activity } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image"; // Import Image for your assets
 
 // --- ANIMATIONS ---
-const drift = keyframes`
-  0% { transform: translateY(0px); opacity: 0.5; }
-  50% { transform: translateY(-20px); opacity: 1; }
-  100% { transform: translateY(0px); opacity: 0.5; }
-`;
-
 const scanline = keyframes`
   0% { transform: translateY(-100%); }
   100% { transform: translateY(100%); }
 `;
 
 // --- STYLES ---
-const HeroSection = styled.section`
+const Container = styled.div`
+  /* We don't need background color here, layout handles it */
   min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+`;
+
+const HeroSection = styled.section`
+  min-height: 90vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  padding-top: 80px;
+  padding-top: 40px;
   overflow: hidden;
 
   /* The Grid Background */
@@ -88,12 +82,15 @@ const Title = styled.h1`
   z-index: 1;
   background: linear-gradient(180deg, #fff 0%, #8b949e 100%);
   -webkit-background-clip: text;
-  background-clip: text;
   -webkit-text-fill-color: transparent;
 
   span {
     color: #58a6ff;
     -webkit-text-fill-color: #58a6ff;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 48px;
   }
 `;
 
@@ -105,6 +102,30 @@ const Subtitle = styled.p`
   margin-bottom: 48px;
   line-height: 1.6;
   z-index: 1;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 16px;
+  z-index: 1;
+  margin-bottom: 60px;
+`;
+
+const PrimaryButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #000;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
 `;
 
 // --- BENTO GRID ---
@@ -193,7 +214,7 @@ const CardIcon = styled.div<{ $color: string }>`
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: ${(p) => `${p.$color}15`}; /* 15% opacity hex */
+  background: ${(p) => `${p.$color}15`};
   color: ${(p) => p.$color};
   display: flex;
   align-items: center;
@@ -215,7 +236,6 @@ const CardText = styled.p`
   line-height: 1.6;
 `;
 
-// --- VISUAL ELEMENTS INSIDE CARDS ---
 const Scanline = styled.div`
   position: absolute;
   top: 0;
@@ -234,16 +254,18 @@ const Scanline = styled.div`
 
 // --- COMPONENT ---
 export default function MarketingPage() {
-  // Simple Mouse Tracking for Spotlight Effect
+  // FIXED: Strict Typing for Event
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const cards = document.getElementsByClassName("bento-card");
-    for (const card of cards as any) {
-      const rect = card.getBoundingClientRect();
+    // FIXED: Use querySelectorAll and proper casting
+    const cards = document.querySelectorAll(".bento-card");
+    cards.forEach((card) => {
+      const htmlCard = card as HTMLElement;
+      const rect = htmlCard.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      card.style.setProperty("--mouse-x", `${x}px`);
-      card.style.setProperty("--mouse-y", `${y}px`);
-    }
+      htmlCard.style.setProperty("--mouse-x", `${x}px`);
+      htmlCard.style.setProperty("--mouse-y", `${y}px`);
+    });
   };
 
   return (
@@ -264,14 +286,19 @@ export default function MarketingPage() {
           and a Write-Ahead Log that never loses a byte.
         </Subtitle>
 
-        {/* Place for your "Exploded View" Image here later */}
+        <ButtonGroup>
+          <PrimaryButton href="/register">
+            Get Started <ArrowRight size={16} />
+          </PrimaryButton>
+        </ButtonGroup>
+
+        {/* HERO IMAGE CONTAINER */}
         <div
           style={{
             width: "100%",
-            maxWidth: "900px",
-            height: "400px",
-            background:
-              "linear-gradient(180deg, rgba(22,27,34,0.5), transparent)",
+            maxWidth: "1000px",
+            height: "500px",
+            background: "rgba(22,27,34,0.3)",
             border: "1px solid #30363d",
             borderBottom: "none",
             borderRadius: "24px 24px 0 0",
@@ -280,20 +307,21 @@ export default function MarketingPage() {
             overflow: "hidden",
           }}
         >
+          {/* Replace this src with your Exploded Server image */}
+          <Image
+            src="/server-exploded.png"
+            alt="Architecture"
+            fill
+            style={{ objectFit: "cover", opacity: 0.8 }}
+          />
           <div
             style={{
               position: "absolute",
-              bottom: "20px",
-              left: "0",
-              right: "0",
-              textAlign: "center",
-              color: "#30363d",
-              fontSize: "12px",
+              inset: 0,
+              background:
+                "linear-gradient(to top, #050505 0%, transparent 50%)",
             }}
-          >
-            [ PLACEHOLDER: Insert Generated &rsquo;Exploded Architecture&lsquo;
-            Image Here ]
-          </div>
+          />
           <Scanline />
         </div>
       </HeroSection>
@@ -313,12 +341,30 @@ export default function MarketingPage() {
               </CardIcon>
               <CardTitle>TimescaleDB Hypertable</CardTitle>
               <CardText>
-                Your logs aren&apos;t just rows. They are time-series data. Our
-                engine automatically partitions data by time and project,
-                enabling queries across billions of rows in milliseconds.
+                Your logs are time-series data. Our engine automatically
+                partitions data by time and project, enabling queries across
+                billions of rows.
               </CardText>
             </CardContent>
-            {/* Visual: Abstract Cube or Grid here */}
+
+            {/* Visual: Hypercube Image */}
+            <div
+              style={{
+                position: "absolute",
+                right: "-50px",
+                bottom: "-50px",
+                width: "300px",
+                height: "300px",
+                opacity: 0.5,
+              }}
+            >
+              <Image
+                src="/hypercube.jpg"
+                alt="Hypertable"
+                fill
+                style={{ objectFit: "contain" }}
+              />
+            </div>
           </Card>
 
           {/* Card 2: Security */}
@@ -344,24 +390,42 @@ export default function MarketingPage() {
               <CardTitle>Zero-Latency Stream</CardTitle>
               <CardText>
                 Forget polling. Our WebSocket engine pushes logs directly from
-                the ingestion pipeline to your dashboard instantly.
+                the ingestion pipeline instantly.
               </CardText>
             </CardContent>
           </Card>
 
-          {/* Card 4: The Engine (Go) */}
+          {/* Card 4: WAL Durability */}
           <Card $colSpan={2} $highlight="#a371f7" className="bento-card">
             <CardContent>
               <CardIcon $color="#a371f7">
                 <Cpu size={24} />
               </CardIcon>
-              <CardTitle>Powered by Go & WAL</CardTitle>
+              <CardTitle>Powered by Write-Ahead Log</CardTitle>
               <CardText>
-                We use a Write-Ahead Log (WAL) on disk to ensure durability.
-                Even if the database crashes, your logs are safe in the buffer,
-                replayed automatically upon recovery.
+                We buffer every byte to a disk-based WAL before flushing. If the
+                database crashes, your data survives.
               </CardText>
             </CardContent>
+            {/* Visual: Vault Image */}
+            <div
+              style={{
+                position: "absolute",
+                right: "0",
+                top: "0",
+                width: "100%",
+                height: "100%",
+                opacity: 0.2,
+                maskImage: "linear-gradient(to left, black, transparent)",
+              }}
+            >
+              <Image
+                src="/vault-green.jpg"
+                alt="WAL Durability"
+                fill
+                style={{ objectFit: "cover" }}
+              />
+            </div>
           </Card>
         </Grid>
       </BentoSection>
