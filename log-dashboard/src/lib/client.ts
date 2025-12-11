@@ -27,9 +27,7 @@ export async function fetchClient<T>(
 
   let data: unknown;
   try {
-    console.log("I just don't know what's happening", "----------------------");
     data = await res.json();
-    console.log(data, "----------------------");
   } catch (error) {
     if (!res.ok) throw new Error("Network response was not ok");
   }

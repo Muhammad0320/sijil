@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import styled from "styled-components";
 import { loginAction } from "@/actions/auth";
 import { AuthFormState } from "@/lib/definitions";
 import { FieldError, GlobalError } from "@/components/ui/formErrors";
