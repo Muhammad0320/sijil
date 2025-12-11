@@ -4,6 +4,9 @@ import styled, { keyframes } from "styled-components";
 import { ArrowRight, Database, Zap, Shield, Cpu, Activity } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image"; // Import Image for your assets
+import hypercube from "../../../public/hypercube.png"; // Example image import
+import valut from "../../../public/vault-green.png"; // Example image import
+import serverExploded from "../../../public/server-exploded.png"; // Example image import
 
 // --- ANIMATIONS ---
 const scanline = keyframes`
@@ -332,7 +335,7 @@ export default function MarketingPage() {
         >
           {/* Replace this src with your Exploded Server image */}
           <Image
-            src="/server-exploded.png"
+            src={serverExploded}
             alt="Architecture"
             fill
             style={{ objectFit: "cover", opacity: 0.8 }}
@@ -382,7 +385,7 @@ export default function MarketingPage() {
               }}
             >
               <Image
-                src="/hypercube.png"
+                src={hypercube}
                 alt="Hypertable"
                 fill
                 style={{ objectFit: "contain" }}
@@ -443,7 +446,7 @@ export default function MarketingPage() {
               }}
             >
               <Image
-                src="/vault-green.png"
+                src={valut}
                 alt="WAL Durability"
                 fill
                 style={{ objectFit: "contain" }}
