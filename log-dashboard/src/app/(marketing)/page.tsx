@@ -1,13 +1,20 @@
 "use client";
 
 import styled, { keyframes } from "styled-components";
-import { ArrowRight, Database, Zap, Shield, Cpu, Activity } from "lucide-react";
+import {
+  ArrowRight,
+  Database,
+  Zap,
+  Shield,
+  Cpu,
+  Activity,
+  Check,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image"; // Import Image for your assets
 import hypercube from "../../../public/hypercube.png"; // Example image import
 import valut from "../../../public/vault-green.png"; // Example image import
 import serverExploded from "../../../public/server-exploded.png"; // Example image import
-import { BorderBeamButton } from "@/components/ui/borderBeamButton";
 
 // --- ANIMATIONS ---
 const scanline = keyframes`
@@ -279,6 +286,157 @@ const BentoSection = styled.section`
   }
 `;
 
+// --- NEW STYLES FOR PERFORMANCE ---
+const ComparisonSection = styled.section`
+  padding: 100px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+`;
+
+const BarContainer = styled.div`
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+`;
+
+const BarGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const BarLabel = styled.div`
+  display: flex;
+  justify-content: space-between;
+  color: #c9d1d9;
+  font-size: 14px;
+  font-weight: 500;
+`;
+
+const BarTrack = styled.div`
+  width: 100%;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+`;
+
+const BarFill = styled.div<{ $width: string; $color: string }>`
+  height: 100%;
+  width: ${(p) => p.$width};
+  background: ${(p) => p.$color};
+  border-radius: 4px;
+  position: relative;
+
+  /* Moving scanline for the "fast" bar */
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    transform: translateX(-100%);
+    animation: ${(p) => (p.$width === "100%" ? "shimmer 2s infinite" : "none")};
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+`;
+
+// --- NEW STYLES FOR PRICING ---
+const PricingSection = styled.section`
+  padding: 100px 24px;
+  max-width: 1200px;
+  margin: 0 auto 100px;
+`;
+
+const PricingGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 64px;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const PriceCard = styled.div<{ $featured?: boolean }>`
+  background: ${(p) =>
+    p.$featured ? "rgba(88, 166, 255, 0.1)" : "rgba(22, 27, 34, 0.6)"};
+  border: 1px solid ${(p) => (p.$featured ? "#58a6ff" : "#30363d")};
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  backdrop-filter: blur(12px);
+  transition: transform 0.3s;
+
+  &:hover {
+    transform: translateY(-8px);
+  }
+
+  ${(p) =>
+    p.$featured &&
+    `
+    &::before {
+      content: 'MOST POPULAR';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #58a6ff;
+      color: #000;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+  `}
+`;
+
+const Price = styled.div`
+  font-size: 36px;
+  font-weight: 700;
+  color: #fff;
+  margin: 16px 0;
+  font-family: var(--font-geist-mono);
+
+  span {
+    font-size: 16px;
+    color: #8b949e;
+    font-weight: 400;
+  }
+`;
+
+const FeatureList = styled.ul`
+  list-style: none;
+  margin: 24px 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const FeatureItem = styled.li`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #c9d1d9;
+  font-size: 14px;
+`;
 // --- COMPONENT ---
 export default function MarketingPage() {
   // FIXED: Strict Typing for Event
@@ -314,11 +472,9 @@ export default function MarketingPage() {
         </Subtitle>
 
         <ButtonGroup>
-          <Link href={"/register"}>
-            <BorderBeamButton variant="primary">
-              Get Started <ArrowRight size={16} />
-            </BorderBeamButton>
-          </Link>
+          <PrimaryButton href="/register">
+            Get Started <ArrowRight size={16} />
+          </PrimaryButton>
         </ButtonGroup>
 
         {/* HERO IMAGE CONTAINER */}
@@ -458,6 +614,148 @@ export default function MarketingPage() {
           </Card>
         </Grid>
       </BentoSection>
+
+      <ComparisonSection id="performance">
+        <SectionHeader>
+          <h2>Benchmarks</h2>
+          <p>Built for speed. We measure latency in microseconds.</p>
+        </SectionHeader>
+
+        <BarContainer>
+          <BarGroup>
+            <BarLabel>
+              <span>LogEngine (Go + Hypertable)</span>
+              <span style={{ color: "#2ecc71" }}>28ms (Ingest P99)</span>
+            </BarLabel>
+            <BarTrack>
+              <BarFill $width="100%" $color="#2ecc71" />
+            </BarTrack>
+          </BarGroup>
+
+          <BarGroup>
+            <BarLabel>
+              <span>Legacy Java Solution</span>
+              <span>450ms</span>
+            </BarLabel>
+            <BarTrack>
+              <BarFill $width="15%" $color="#30363d" />
+            </BarTrack>
+          </BarGroup>
+
+          <BarGroup>
+            <BarLabel>
+              <span>Traditional SQL</span>
+              <span>820ms</span>
+            </BarLabel>
+            <BarTrack>
+              <BarFill $width="8%" $color="#30363d" />
+            </BarTrack>
+          </BarGroup>
+        </BarContainer>
+      </ComparisonSection>
+
+      <PricingSection id="pricing">
+        <SectionHeader>
+          <h2>Transparent Pricing</h2>
+          <p>Start small, scale infinitely.</p>
+        </SectionHeader>
+
+        <PricingGrid>
+          {/* Free Plan */}
+          <PriceCard>
+            <CardTitle>Developer</CardTitle>
+            <Price>
+              $0<span>/mo</span>
+            </Price>
+            <CardText>For side projects and experiments.</CardText>
+            <FeatureList>
+              <FeatureItem>
+                <Check size={16} color="#2ecc71" /> 3 Day Retention
+              </FeatureItem>
+              <FeatureItem>
+                <Check size={16} color="#2ecc71" /> 1 Member
+              </FeatureItem>
+              <FeatureItem>
+                <Check size={16} color="#2ecc71" /> 10k Logs/Day
+              </FeatureItem>
+            </FeatureList>
+            <PrimaryButton
+              href="/register"
+              style={{
+                width: "100%",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.1)",
+                color: "#fff",
+                border: "1px solid #30363d",
+              }}
+            >
+              Start Free
+            </PrimaryButton>
+          </PriceCard>
+
+          {/* Pro Plan */}
+          <PriceCard $featured>
+            <CardTitle>Pro Team</CardTitle>
+            <Price>
+              $29<span>/mo</span>
+            </Price>
+            <CardText>For startups shipping to production.</CardText>
+            <FeatureList>
+              <FeatureItem>
+                <Check size={16} color="#58a6ff" /> 30 Day Retention
+              </FeatureItem>
+              <FeatureItem>
+                <Check size={16} color="#58a6ff" /> 10 Members
+              </FeatureItem>
+              <FeatureItem>
+                <Check size={16} color="#58a6ff" /> 1M Logs/Day
+              </FeatureItem>
+              <FeatureItem>
+                <Check size={16} color="#58a6ff" /> Email Alerts
+              </FeatureItem>
+            </FeatureList>
+            <PrimaryButton
+              href="/register"
+              style={{ width: "100%", justifyContent: "center" }}
+            >
+              Get Pro
+            </PrimaryButton>
+          </PriceCard>
+
+          {/* Ultra Plan */}
+          <PriceCard>
+            <CardTitle>Enterprise</CardTitle>
+            <Price>Custom</Price>
+            <CardText>For high-volume data compliance.</CardText>
+            <FeatureList>
+              <FeatureItem>
+                <Check size={16} color="#2ecc71" /> 1 Year Retention
+              </FeatureItem>
+              <FeatureItem>
+                <Check size={16} color="#2ecc71" /> Unlimited Members
+              </FeatureItem>
+              <FeatureItem>
+                <Check size={16} color="#2ecc71" /> SSO & SAML
+              </FeatureItem>
+              <FeatureItem>
+                <Check size={16} color="#2ecc71" /> Dedicated VPC
+              </FeatureItem>
+            </FeatureList>
+            <PrimaryButton
+              href="mailto:sales@logengine.com"
+              style={{
+                width: "100%",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.1)",
+                color: "#fff",
+                border: "1px solid #30363d",
+              }}
+            >
+              Contact Sales
+            </PrimaryButton>
+          </PriceCard>
+        </PricingGrid>
+      </PricingSection>
     </Container>
   );
 }
