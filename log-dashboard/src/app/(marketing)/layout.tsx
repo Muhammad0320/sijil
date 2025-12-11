@@ -88,7 +88,7 @@ export default function MarketingLayout({
           </Link>
           <div style={{ width: "140px" }}>
             <Link href="/register">
-              <BorderBeamButton>Get Started</BorderBeamButton>
+              <BorderBeamButton variant="primary">Get Started</BorderBeamButton>
             </Link>
           </div>
         </AuthButtons>
