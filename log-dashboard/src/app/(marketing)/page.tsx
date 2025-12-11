@@ -82,6 +82,7 @@ const Title = styled.h1`
   z-index: 1;
   background: linear-gradient(180deg, #fff 0%, #8b949e 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 
   span {
@@ -423,7 +424,7 @@ export default function MarketingPage() {
                 src="/vault-green.png"
                 alt="WAL Durability"
                 fill
-                style={{ objectFit: "cover" }}
+                style={{ objectFit: "contain" }}
               />
             </div>
           </Card>
