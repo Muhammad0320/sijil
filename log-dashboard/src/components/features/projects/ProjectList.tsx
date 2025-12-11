@@ -191,7 +191,7 @@ export default function ProjectList({
         </AddButton>
       </Header>
 
-      {optimisticProjects.map((p) => (
+      {optimisticProjects?.map((p) => (
         <ProjectItem
           key={p.id}
           $active={selectedId === p.id}

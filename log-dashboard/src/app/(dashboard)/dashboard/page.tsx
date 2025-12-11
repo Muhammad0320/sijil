@@ -34,14 +34,14 @@ export default function DashboardClient({
 
   // Default to the first project if available
   const [selectedProject, setSelectedProject] = useState<number | null>(
-    initialProjects.length > 0 ? initialProjects[0].id : null
+    initialProjects?.length > 0 ? initialProjects[0].id : null
   );
 
   // 2. WebSocket Connection
   // Pass the selected project ID. The hook handles connecting/disconnecting/buffering.
   // 3. Derived UI State
   const currentProjectName =
-    projects.find((p) => p.id === selectedProject)?.name || "Select Project";
+    projects?.find((p) => p.id === selectedProject)?.name || "Select Project";
 
   const [searchQuery, setSearchQuery] = useState("");
 
