@@ -72,7 +72,7 @@ export const InviteSchema = z.object({
   projectId: z.coerce.number(), // hidden fields or passed via bind
 });
 
-export type InvideState = {
+export type InviteState = {
   errors?: {
     email?: string[];
     role?: string[];
