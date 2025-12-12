@@ -6,7 +6,7 @@ import styled from "styled-components";
 import { createProjectAction, CreateProjectState } from "@/actions/projects";
 import { useToast } from "@/providers/ToastProvider";
 import { FieldError } from "@/components/ui/formErrors";
-import { BorderBeam } from "@/components/ui/borderBeamButton";
+import { BorderBeamButton } from "@/components/ui/borderBeamButton";
 
 const Input = styled.input`
   width: 100%;
@@ -77,6 +77,13 @@ export default function CreateProjectForm({
         <button type="submit" disabled={isPending || transitionPending}>
           create project
         </button>
+        <BorderBeamButton
+          type="submit"
+          isLoading={isPending || transitionPending}
+          disabled={isPending || transitionPending}
+        >
+          Create Project
+        </BorderBeamButton>
       </div>
     </form>
   );

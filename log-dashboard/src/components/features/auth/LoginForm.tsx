@@ -62,11 +62,7 @@ export default function LoginForm() {
         <FieldError errors={state.errors.password} />
       </FormGroup>
 
-      <div style={{ marginTop: "16px" }}>
-        <BorderBeamButton type="submit" isLoading={isPending}>
-          Initialize Session
-        </BorderBeamButton>
-      </div>
+      <div style={{ marginTop: "16px" }}></div>
     </Form>
   );
 }
