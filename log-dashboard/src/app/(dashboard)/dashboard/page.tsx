@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DashboardGrid } from "@/components/layout/layout";
+import { DashboardGrid } from "@/app/(dashboard)/dashboard/layout";
 import ProjectList from "@/components/features/projects/ProjectList";
 import { useLogStream } from "@/hooks/useLogStream";
 import { Project } from "@/lib/types"; // Using our shared type
