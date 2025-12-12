@@ -64,8 +64,10 @@ const Value = styled.div<{ $color?: string }>`
 
 export default function SummaryCards({
   projectId,
+  token,
 }: {
   projectId: number | null;
+  token: string;
 }) {
   const [summary, setSummary] = useState<LogSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,7 +83,9 @@ export default function SummaryCards({
 
       try {
         const res = await fetchClient<{ summary: LogSummary }>(
-          `/logs/summary?project_id=${projectId}`
+          `/logs/summary?project_id=${projectId}`,
+          { method: "GET" },
+          token
         );
         if (!ignore) {
           setSummary(res.summary);

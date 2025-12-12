@@ -192,7 +192,7 @@ export default function DashboardClient({
             onSelect={(id) => setSelectedProject(id)}
           />
         }
-        metrics={<SummaryCards projectId={selectedProject} />}
+        metrics={<SummaryCards projectId={selectedProject} token={token} />}
         logs={
           <div
             style={{ display: "flex", flexDirection: "column", height: "100%" }}
@@ -207,7 +207,7 @@ export default function DashboardClient({
             </div>
           </div>
         }
-        charts={<VolumeChart projectId={selectedProject} />}
+        charts={<VolumeChart projectId={selectedProject} token={token} />}
       />
       <Modal
         isOpen={isSettingsOpen}
