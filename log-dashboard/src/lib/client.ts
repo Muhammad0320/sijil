@@ -1,5 +1,3 @@
-import { getSession } from "./session";
-
 interface ApiError {
   error: string;
 }
@@ -9,10 +7,9 @@ const API_URL =
 
 export async function fetchClient<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  token?: string
 ): Promise<T> {
-  const token = getSession();
-
   const headers = {
     "Content-Type": "application/json",
     ...(token ? { Authorizatiton: `Bearer ${token}` } : {}),
