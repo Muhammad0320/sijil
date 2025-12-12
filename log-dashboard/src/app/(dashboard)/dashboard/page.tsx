@@ -1,6 +1,7 @@
 import { getProjects } from "@/actions/projects";
 import { getSession } from "@/lib/session";
 import DashboardClient from "./DashboardClient"; // Your big component
+import { DashboardProvider } from "@/providers/DashboardProviders";
 
 export default async function DashboardPage() {
   const token = await getSession();
@@ -12,10 +13,8 @@ export default async function DashboardPage() {
   // 3. Feed the Client Component
   // This "hydrates" the interactive part of your app
   return (
-    <DashboardClient
-      initialProjects={projects || []}
-      token={token || ""}
-      serverError={error}
-    />
+    <DashboardProvider initialProjects={projects || []} token={token || ""}>
+      <DashboardClient serverError={error} />
+    </DashboardProvider>
   );
 }
