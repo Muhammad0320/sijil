@@ -75,11 +75,12 @@ export default function MarketingLayout({
     <div style={{ backgroundColor: "#050505", minHeight: "100vh" }}>
       <Nav>
         <Logo>LogEngine</Logo>
-        <NavLinks>
-          <Link href="#features">Architecture</Link>
-          <Link href="#performance">Benchmarks</Link>
-          <Link href="#pricing">Pricing</Link>
+
+        {/* Hide links on mobile for now to prevent clutter */}
+        <NavLinks style={{ display: "none" }}>
+          {/* You can implement a proper drawer here later if needed */}
         </NavLinks>
+
         <AuthButtons>
           <Link
             href="/login"
@@ -87,9 +88,9 @@ export default function MarketingLayout({
           >
             Sign In
           </Link>
-          <div style={{ width: "140px" }}>
+          <div style={{ width: "120px" }}>
             <Link href="/register">
-              <BorderBeamButton variant="primary">Get Started</BorderBeamButton>
+              <BorderBeamButton variant="primary">Start</BorderBeamButton>
             </Link>
           </div>
         </AuthButtons>
