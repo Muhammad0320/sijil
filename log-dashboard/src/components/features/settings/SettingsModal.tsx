@@ -66,9 +66,10 @@ export default function SettingsModal({ projectId }: { projectId: number }) {
       setEmail("");
     } catch (err) {
       if (err instanceof Error) {
-        toast.error(err.message);
+        toast.error(err.message || "Failed to invite member");
+      } else {
+        toast.error("Failed to invite member");
       }
-      toast.error("Failed to invite member");
     } finally {
       setLoading(false);
     }
