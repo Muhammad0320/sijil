@@ -18,6 +18,7 @@ import { DashboardGrid } from "@/components/layout/DashboardGrid";
 import { useDashboard } from "@/providers/DashboardProviders";
 import { LogEntry } from "@/lib/types";
 import { getLogsAction } from "@/actions/logs";
+import KeyRevel from "@/components/features/projects/KeyReveal";
 
 // Helper for the header button
 const HeaderBtn = styled.button`
@@ -47,7 +48,6 @@ export default function DashboardClient({
     projects,
     selectedProjectId,
     setSelectedProjectId,
-    isCreateOpen,
     isSettingsOpen,
     setSettingsOpen,
     setCreateOpen,
@@ -67,6 +67,15 @@ export default function DashboardClient({
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [modalState, setModalState] = useState<{
+    mode: "CREATE" | "KEYS";
+    data: {
+      name: string;
+      apiKey: string;
+      apiSecret: string;
+      projectId: number;
+    };
+  } | null>(null);
 
   useEffect(() => {
     if (!selectedProjectId) return;
@@ -100,18 +109,21 @@ export default function DashboardClient({
     if (liveLogs.length === 0) return;
 
     const latestLog = liveLogs[0];
-    const matchesQuery =
-      !searchQuery ||
-      latestLog.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      latestLog.service.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      latestLog.level.toLowerCase().includes(searchQuery.toLowerCase());
+    const lowerQuery = searchQuery.toLowerCase();
+
+    let matchesQuery = true;
+
+    if (lowerQuery) {
+      matchesQuery =
+        latestLog.message.toLowerCase().includes(lowerQuery) ||
+        latestLog.service.toLowerCase().includes(lowerQuery) ||
+        latestLog.level.toLowerCase().includes(lowerQuery);
+    }
 
     if (matchesQuery) {
       setLogs((prev) => [latestLog, ...prev]);
     }
   }, [liveLogs, searchQuery]);
-
-  console.log(projects, "----------------");
 
   if (projects.length === 0) {
     return (
@@ -127,17 +139,27 @@ export default function DashboardClient({
         </div>
 
         <Modal
-          isOpen={isCreateOpen}
-          onClose={() => setCreateOpen(false)}
-          title="Initialize Project"
+          isOpen={!!modalState}
+          onClose={() => setModalState(null)}
+          title={
+            modalState?.mode === "KEYS"
+              ? "Project Initialized"
+              : "Initialize Project"
+          }
         >
-          <CreateProjectForm
-            onProjectCreated={(data) => {
-              addProject({ id: data.projectId, name: "New Project" });
-              setCreateOpen(false);
-            }}
-            addOptimistic={() => {}}
-          />
+          {modalState?.mode === "CREATE" && (
+            <CreateProjectForm
+              onProjectCreated={(data) => {
+                addProject({ id: data.projectId, name: data.name });
+                setCreateOpen(false);
+
+                // switch modal to key revel mode
+                setModalState({ mode: "KEYS", data });
+              }}
+              addOptimistic={() => {}}
+            />
+          )}
+          {modalState?.mode === "KEYS" && <KeyRevel data={modalState.data} />}
         </Modal>
       </>
     );
@@ -230,6 +252,23 @@ export default function DashboardClient({
               onRefresh={() => {}}
             />
             <div style={{ flex: 1 }}>
+              {isSearching && (
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    backdropFilter: "blur(2px)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 10,
+                    backgroundColor: "rgba(13, 17, 23, 0.5)",
+                  }}
+                >
+                  <p style={{ color: "#58a6ff" }}>Searching...</p>
+                  {/* Replace with a cool spinner component later */}
+                </div>
+              )}
               <LogList logs={logs} />
             </div>
           </div>
