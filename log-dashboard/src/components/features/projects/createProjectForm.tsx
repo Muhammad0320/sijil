@@ -32,6 +32,7 @@ export default function CreateProjectForm({
     apiKey: string;
     apiSecret: string;
     projectId: number;
+    name: string;
   }) => void;
   addOptimistic: (name: string) => void;
 }) {
