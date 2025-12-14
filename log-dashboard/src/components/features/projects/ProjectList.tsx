@@ -137,61 +137,25 @@ interface ProjectListProps {
   initialProjects: Project[];
   onSelect: (id: number) => void;
   selectedId: number | null;
+  onAddClick: () => void;
 }
 
 export default function ProjectList({
   initialProjects,
   onSelect,
   selectedId,
+  onAddClick,
 }: ProjectListProps) {
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-
-  // NEW: State to hold the created keys
-  const [createdKeys, setCreatedKeys] = useState<{
-    apiKey: string;
-    apiSecret: string;
-    projectId: number;
-  } | null>(null);
-
-  const [optimisticProjects, addOptimisticProject] = useOptimistic(
-    initialProjects,
-    (state: Project[], newProject: Project) => [...state, newProject]
-  );
-
-  const handleAddOptimistic = (name: string) => {
-    addOptimisticProject({
-      id: Math.random(),
-      name: name,
-      pending: true,
-    });
-  };
-
-  // When form succeeds, we don't close. We show keys.
-  const handleProjectCreated = (data: {
-    apiKey: string;
-    apiSecret: string;
-    projectId: number;
-  }) => {
-    setCreatedKeys(data);
-    // Auto-select the new project behind the modal
-    onSelect(data.projectId);
-  };
-
-  const closeAndReset = () => {
-    setIsCreateOpen(false);
-    setCreatedKeys(null);
-  };
-
   return (
     <Container>
       <Header>
         <Title>Projects</Title>
-        <AddButton onClick={() => setIsCreateOpen(true)}>
+        <AddButton onClick={onAddClick}>
           <Plus size={16} />
         </AddButton>
       </Header>
 
-      {optimisticProjects?.map((p) => (
+      {initialProjects?.map((p) => (
         <ProjectItem
           key={p.id}
           $active={selectedId === p.id}
