@@ -65,6 +65,7 @@ export async function createProjectAction(
         apiKey: res.api_key,
         apiSecret: res.api_secret,
         projectId: res.project_id,
+        name: validated.data.name
       },
     };
   } catch (err: unknown) {

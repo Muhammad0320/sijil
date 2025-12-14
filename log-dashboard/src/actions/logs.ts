@@ -2,14 +2,16 @@ import { fetchClient } from "@/lib/client";
 import { getSession } from "@/lib/session";
 import { LogEntry } from "@/lib/types";
 
-export async function getLogsAction(projectId: number, query: string = "") {
+export async function getLogsAction(projectId: number, query: string = "", page: number = 1, limit: number = 100) {
   const token = await getSession();
 
   const params = new URLSearchParams();
-  params.set("project_id", projectId + "");
+  params.set("project_id", projectId.toString());
   if (query) params.set("q", query);
-  params.set("limit", "100");
+  params.set("limit", limit.toString());
+  params.set("page", page.toString())
 
+  
   try {
     const data = await fetchClient<{ logs: LogEntry[] }>(
       `/logs${params.toString()}`,
