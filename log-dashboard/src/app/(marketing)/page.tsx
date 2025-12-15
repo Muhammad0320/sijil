@@ -15,6 +15,7 @@ import Image from "next/image"; // Import Image for your assets
 import hypercube from "../../../public/hypercube.png"; // Example image import
 import valut from "../../../public/vault-green.png"; // Example image import
 import serverExploded from "../../../public/server-exploded.png"; // Example image import
+import { useEffect, useState } from "react";
 
 // --- ANIMATIONS ---
 const scanline = keyframes`
@@ -22,73 +23,92 @@ const scanline = keyframes`
   100% { transform: translateY(100%); }
 `;
 
+const blink = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+`;
+
+const float = keyframes`
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+`;
+
 // --- STYLES ---
 const Container = styled.div`
-  /* We don't need background color here, layout handles it */
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
+  background: #050505; /* Fallback */
 `;
 
 const HeroTitle = styled.h1`
-  font-size: 84px;
+  font-size: 80px;
   font-weight: 800;
   letter-spacing: -3px;
-  line-height: 1.05;
+  line-height: 1.1;
   text-align: center;
   margin-bottom: 24px;
   z-index: 1;
-  max-width: 90%; /* Prevent overflow */
+  max-width: 1100px;
 
-  /* Gradient text... */
   background: linear-gradient(180deg, #fff 0%, #8b949e 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 
-  span {
-    color: #58a6ff;
-    -webkit-text-fill-color: #58a6ff;
-  }
-
-  /* Tablet & Mobile Adjustment */
+  /* Responsive Text */
   @media (max-width: 1024px) {
-    font-size: 56px; /* Smaller for tablets */
+    font-size: 56px;
   }
-
   @media (max-width: 768px) {
-    font-size: 42px; /* Smaller for mobile */
+    font-size: 40px;
   }
 `;
 
+const TypewriterCursor = styled.span`
+  display: inline-block;
+  width: 4px;
+  height: 1em;
+  background-color: #58a6ff;
+  margin-left: 4px;
+  vertical-align: middle;
+  animation: ${blink} 1s step-end infinite;
+`;
+
+const Highlight = styled.span`
+  color: #58a6ff;
+  -webkit-text-fill-color: #58a6ff;
+`;
+
 const HeroSection = styled.section`
-  min-height: 90vh;
+  min-height: 95vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  /* padding-top: 40px; */
+  padding-top: 60px;
   overflow: hidden;
 
-  /* The Grid Background */
-  background-size: 50px 50px;
+  /* Grid Background */
+  background-size: 40px 40px;
   background-image: linear-gradient(
       to right,
       rgba(255, 255, 255, 0.03) 1px,
       transparent 1px
     ),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+  mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
 `;
 
 const HeroGlow = styled.div`
   position: absolute;
-  width: 600px;
-  height: 600px;
+  width: 800px;
+  height: 800px;
   background: radial-gradient(
     circle,
-    rgba(88, 166, 255, 0.15) 0%,
+    rgba(88, 166, 255, 0.12) 0%,
     transparent 70%
   );
   top: 50%;
@@ -96,30 +116,31 @@ const HeroGlow = styled.div`
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 0;
-  filter: blur(80px);
+  filter: blur(100px);
 `;
 
 const Pill = styled.div`
-  background: rgba(48, 54, 61, 0.5);
-  border: 1px solid #30363d;
+  background: rgba(88, 166, 255, 0.1);
+  border: 1px solid rgba(88, 166, 255, 0.3);
   padding: 6px 16px;
   border-radius: 99px;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   color: #58a6ff;
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 32px;
   backdrop-filter: blur(4px);
-  z-index: 1;
+  box-shadow: 0 0 20px rgba(88, 166, 255, 0.1);
 `;
 
 const Subtitle = styled.p`
   font-size: 20px;
   color: #8b949e;
   text-align: center;
-  max-width: 600px;
-  margin-bottom: 48px;
+  max-width: 640px;
+  margin-bottom: 40px;
   line-height: 1.6;
   z-index: 1;
 `;
@@ -128,7 +149,7 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 16px;
   z-index: 1;
-  margin-bottom: 60px;
+  margin-bottom: 80px;
 `;
 
 const PrimaryButton = styled(Link)`
@@ -137,14 +158,34 @@ const PrimaryButton = styled(Link)`
   gap: 8px;
   background: #fff;
   color: #000;
-  padding: 14px 28px;
+  padding: 16px 32px;
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 15px;
-  transition: transform 0.2s;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.2s;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
 
   &:hover {
     transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+  }
+`;
+
+const SecondaryButton = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  padding: 16px 32px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
   }
 `;
 
@@ -154,9 +195,10 @@ const SectionHeader = styled.div`
 
   h2 {
     font-size: 48px;
-    font-weight: 700;
+    font-weight: 800;
     margin-bottom: 16px;
-    letter-spacing: -1px;
+    letter-spacing: -1.5px;
+    color: #fff;
   }
 
   p {
@@ -165,25 +207,27 @@ const SectionHeader = styled.div`
   }
 `;
 
+const BentoSection = styled.section`
+  padding: 100px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+`;
+
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-
-  /* Tablet: 2 Columns */
   @media (max-width: 1024px) {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  /* Mobile: 1 Column */
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
 `;
 
 const Card = styled.div<{ $colSpan?: number; $highlight?: string }>`
-  background: rgba(22, 27, 34, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(13, 17, 23, 0.6);
+  border: 1px solid rgba(48, 54, 61, 0.6);
   border-radius: 24px;
   padding: 32px;
   display: flex;
@@ -192,9 +236,10 @@ const Card = styled.div<{ $colSpan?: number; $highlight?: string }>`
   grid-column: span ${(p) => p.$colSpan || 1};
   position: relative;
   overflow: hidden;
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
 
-  /* The Spotlight Effect */
+  /* Spotlight Effect */
   &::before {
     content: "";
     position: absolute;
@@ -215,15 +260,14 @@ const Card = styled.div<{ $colSpan?: number; $highlight?: string }>`
   &:hover::before {
     opacity: 1;
   }
-
   &:hover {
     border-color: ${(p) => p.$highlight || "#58a6ff"};
     transform: translateY(-4px);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
   }
 
-  /* Reset spans on tablet/mobile so cards don't leave gaps */
   @media (max-width: 1024px) {
-    grid-column: span 1 !important; /* Force single column width */
+    grid-column: span 1 !important;
   }
 `;
 
@@ -243,13 +287,15 @@ const CardIcon = styled.div<{ $color: string }>`
   justify-content: center;
   margin-bottom: 24px;
   border: 1px solid ${(p) => `${p.$color}30`};
+  box-shadow: 0 0 15px ${(p) => `${p.$color}20`};
 `;
 
 const CardTitle = styled.h3`
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 12px;
   color: #fff;
+  letter-spacing: -0.5px;
 `;
 
 const CardText = styled.p`
@@ -272,18 +318,6 @@ const Scanline = styled.div`
   );
   animation: ${scanline} 3s linear infinite;
   pointer-events: none;
-`;
-
-// 4. Fix Section Padding
-const BentoSection = styled.section`
-  padding: 100px 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%; /* Ensure it doesn't overflow container */
-
-  @media (max-width: 768px) {
-    padding: 60px 16px;
-  }
 `;
 
 // --- NEW STYLES FOR PERFORMANCE ---
@@ -438,10 +472,49 @@ const FeatureItem = styled.li`
   font-size: 14px;
 `;
 // --- COMPONENT ---
+function Typewriter({ words }: { words: string[] }) {
+  const [index, setIndex] = useState(0);
+  const [subIndex, setSubIndex] = useState(0);
+  const [reverse, setReverse] = useState(false);
+
+  // Blinking cursor logic
+  useEffect(() => {
+    if (index >= words.length) return;
+
+    if (subIndex === words[index].length + 1 && !reverse) {
+      setTimeout(() => setReverse(true), 1000); // Wait before deleting
+      return;
+    }
+
+    if (subIndex === 0 && reverse) {
+      setTimeout(() => {
+        setReverse(false);
+        setIndex((prev) => (prev + 1) % words.length); // Next word
+      }, 0);
+      return;
+    }
+
+    const timeout = setTimeout(
+      () => {
+        setSubIndex((prev) => prev + (reverse ? -1 : 1));
+      },
+      reverse ? 50 : 100
+    ); // Typing speed
+
+    return () => clearTimeout(timeout);
+  }, [subIndex, index, reverse, words]);
+
+  return (
+    <Highlight>
+      {words[index].substring(0, subIndex)}
+      <TypewriterCursor />
+    </Highlight>
+  );
+}
+
+// --- MAIN PAGE ---
 export default function MarketingPage() {
-  // FIXED: Strict Typing for Event
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    // FIXED: Use querySelectorAll and proper casting
     const cards = document.querySelectorAll(".bento-card");
     cards.forEach((card) => {
       const htmlCard = card as HTMLElement;
@@ -458,157 +531,185 @@ export default function MarketingPage() {
       <HeroSection>
         <HeroGlow />
         <Pill>
-          <Zap size={12} fill="currentColor" /> v1.0.0 Stable Release
+          <Zap size={14} fill="currentColor" /> LogEngine v1.0 Production Ready
         </Pill>
 
         <HeroTitle>
-          Ingest at <br />
-          <span>Hyperspeed.</span>
+          The Log Engine for <br />
+          <Typewriter
+            words={[
+              "Hyperspeed Ingestion.",
+              "Realtime Debugging.",
+              "Scale & Durability.",
+            ]}
+          />
         </HeroTitle>
 
         <Subtitle>
-          The observability platform for the AI era. Built with Go, TimescaleDB,
-          and a Write-Ahead Log that never loses a byte.
+          A purpose-built observability platform. Written in Go.
+          <br />
+          Backed by TimescaleDB. Powered by a crash-proof WAL.
         </Subtitle>
 
         <ButtonGroup>
           <PrimaryButton href="/register">
-            Get Started <ArrowRight size={16} />
+            Start Ingesting <ArrowRight size={18} />
           </PrimaryButton>
+          <SecondaryButton href="https://github.com/muhammad0320/log-engine">
+            View Source
+          </SecondaryButton>
         </ButtonGroup>
 
-        {/* HERO IMAGE CONTAINER */}
+        {/* HERO VISUALIZATION (Replaces the Exploded Server) */}
         <div
           style={{
             width: "100%",
             maxWidth: "1000px",
-            height: "500px",
-            background: "rgba(22,27,34,0.3)",
+            height: "550px",
+            background:
+              "radial-gradient(circle at center, #161b22 0%, #0d1117 100%)",
             border: "1px solid #30363d",
             borderBottom: "none",
             borderRadius: "24px 24px 0 0",
-            marginTop: "40px",
+            marginTop: "20px",
             position: "relative",
             overflow: "hidden",
+            boxShadow: "0 -20px 100px -20px rgba(0,0,0,0.8)",
           }}
         >
-          {/* Replace this src with your Exploded Server image */}
+          {/* PLACEHOLDER FOR YOUR NEW HERO IMAGE (The Pipeline) */}
           <Image
-            src={serverExploded}
-            alt="Architecture"
+            src={serverExploded} // TODO: Replace with 'pipeline.png'
+            alt="Ingestion Pipeline"
             fill
-            style={{ objectFit: "cover", opacity: 0.8 }}
+            style={{
+              objectFit: "cover",
+              opacity: 0.9,
+              mixBlendMode: "lighten",
+            }}
           />
+
+          {/* Overlay Gradient for smooth fade */}
           <div
             style={{
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(to top, #050505 0%, transparent 50%)",
+                "linear-gradient(to top, #050505 5%, transparent 60%)",
             }}
           />
-          <Scanline />
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "2px",
+              background: "#58a6ff",
+              boxShadow: "0 0 20px #58a6ff",
+            }}
+          />
         </div>
       </HeroSection>
 
       <BentoSection id="features">
         <SectionHeader>
-          <h2>Engineered for Scale</h2>
-          <p>We didn&apos;t just build a dashboard. We built a data engine.</p>
+          <h2>Built for the Paranoid</h2>
+          <p>We assume everything will crash. That&apos;s why it works.</p>
         </SectionHeader>
 
         <Grid>
-          {/* Card 1: Hypertable */}
+          {/* Feature 1: The Engine */}
           <Card $colSpan={2} $highlight="#58a6ff" className="bento-card">
             <CardContent>
               <CardIcon $color="#58a6ff">
-                <Database size={24} />
+                <Cpu size={24} />
               </CardIcon>
-              <CardTitle>TimescaleDB Hypertable</CardTitle>
+              <CardTitle>Zero-Allocation Ingestion</CardTitle>
               <CardText>
-                Your logs are time-series data. Our engine automatically
-                partitions data by time and project, enabling queries across
-                billions of rows.
+                Our Go ingestion engine is optimized to reduce GC pauses.
+                Workers drain gracefully on shutdown, ensuring no request is
+                dropped even during deployments.
               </CardText>
             </CardContent>
-
-            {/* Visual: Hypercube Image */}
+            {/* Abstract visual */}
             <div
               style={{
                 position: "absolute",
-                right: "-50px",
-                bottom: "-50px",
-                width: "300px",
-                height: "300px",
-                opacity: 0.5,
+                right: "-20px",
+                bottom: "-20px",
+                opacity: 0.3,
               }}
             >
+              {/* TODO: Use the new 'hypercube.png' here */}
               <Image
                 src={hypercube}
-                alt="Hypertable"
-                fill
+                alt="Engine"
+                width={300}
+                height={300}
                 style={{ objectFit: "contain" }}
               />
             </div>
           </Card>
 
-          {/* Card 2: Security */}
-          <Card $highlight="#2ecc71" className="bento-card">
-            <CardContent>
-              <CardIcon $color="#2ecc71">
-                <Shield size={24} />
-              </CardIcon>
-              <CardTitle>Vault-Grade Auth</CardTitle>
-              <CardText>
-                API Keys are hashed using SHA-256 and salt. Granular RBAC
-                ensures users only see what they own.
-              </CardText>
-            </CardContent>
-          </Card>
-
-          {/* Card 3: Realtime */}
+          {/* Feature 2: Auth */}
           <Card $highlight="#f1c40f" className="bento-card">
             <CardContent>
               <CardIcon $color="#f1c40f">
-                <Activity size={24} />
+                <Shield size={24} />
               </CardIcon>
-              <CardTitle>Zero-Latency Stream</CardTitle>
+              <CardTitle>In-Memory Auth</CardTitle>
               <CardText>
-                Forget polling. Our WebSocket engine pushes logs directly from
-                the ingestion pipeline instantly.
+                We don&apos;t hit the DB for every log. Project keys are cached
+                in RAM with aggressive TTLs, cutting auth latency to
+                nanoseconds.
               </CardText>
             </CardContent>
           </Card>
 
-          {/* Card 4: WAL Durability */}
+          {/* Feature 3: Live Stream */}
+          <Card $highlight="#2ecc71" className="bento-card">
+            <CardContent>
+              <CardIcon $color="#2ecc71">
+                <Zap size={24} />
+              </CardIcon>
+              <CardTitle>WebSockets</CardTitle>
+              <CardText>
+                See logs as they happen. Our event loop pipes ingestion directly
+                to connected clients. No polling. No lag.
+              </CardText>
+            </CardContent>
+          </Card>
+
+          {/* Feature 4: WAL */}
           <Card $colSpan={2} $highlight="#a371f7" className="bento-card">
             <CardContent>
               <CardIcon $color="#a371f7">
-                <Cpu size={24} />
+                <Database size={24} />
               </CardIcon>
-              <CardTitle>Powered by Write-Ahead Log</CardTitle>
+              <CardTitle>Write-Ahead Log (WAL)</CardTitle>
               <CardText>
-                We buffer every byte to a disk-based WAL before flushing. If the
-                database crashes, your data survives.
+                Every byte is buffered to disk before processing. If the server
+                crashes, our recovery protocol replays the WAL on startup. Zero
+                data loss.
               </CardText>
             </CardContent>
-            {/* Visual: Vault Image */}
             <div
               style={{
                 position: "absolute",
                 right: "0",
                 top: "0",
-                width: "100%",
                 height: "100%",
-                opacity: 0.2,
-                maskImage: "linear-gradient(to left, black, transparent)",
+                width: "50%",
+                opacity: 0.15,
               }}
             >
+              {/* TODO: Use the new 'vault.png' here */}
               <Image
                 src={valut}
-                alt="WAL Durability"
+                alt="WAL"
                 fill
-                style={{ objectFit: "contain" }}
+                style={{ objectFit: "contain", objectPosition: "right" }}
               />
             </div>
           </Card>
