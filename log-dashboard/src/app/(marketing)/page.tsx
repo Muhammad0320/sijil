@@ -663,36 +663,19 @@ export default function MarketingPage() {
               </FloatingVisual>
             </div>
           </Card>
-
-          {/* Feature 4: WAL */}
-          <Card $colSpan={2} $highlight="#a371f7" className="bento-card">
+          {/* Feature 2: Auth */}
+          <Card $highlight="#f1c40f" className="bento-card">
             <CardContent>
-              <CardIcon $color="#a371f7">
-                <Database size={24} />
+              <CardIcon $color="#f1c40f">
+                <Shield size={24} />
               </CardIcon>
-              <CardTitle>Write-Ahead Log (WAL)</CardTitle>
-              <CardText>Crash-proof durability.</CardText>
+              <CardTitle>In-Memory Auth</CardTitle>
+              <CardText>
+                We don&apos;t hit the DB for every log. Project keys are cached
+                in RAM with aggressive TTLs, cutting auth latency to
+                nanoseconds.
+              </CardText>
             </CardContent>
-            {/* FIX: Floating Vault */}
-            <div
-              style={{
-                position: "absolute",
-                right: "0",
-                top: "0",
-                height: "100%",
-                width: "50%",
-                opacity: 0.15,
-              }}
-            >
-              <FloatingVisual>
-                <Image
-                  src={vault}
-                  alt="WAL"
-                  fill
-                  style={{ objectFit: "contain", objectPosition: "right" }}
-                />
-              </FloatingVisual>
-            </div>
           </Card>
 
           {/* Feature 3: Live Stream */}
