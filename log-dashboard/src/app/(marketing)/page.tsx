@@ -581,7 +581,7 @@ export default function MarketingPage() {
           </SecondaryButton>
         </ButtonGroup>
 
-        {/* HERO VISUALIZATION (Replaces the Exploded Server) */}
+        {/* HERO VISUALIZATION */}
         <div
           style={{
             width: "100%",
@@ -598,9 +598,8 @@ export default function MarketingPage() {
             boxShadow: "0 -20px 100px -20px rgba(0,0,0,0.8)",
           }}
         >
-          {/* PLACEHOLDER FOR YOUR NEW HERO IMAGE (The Pipeline) */}
           <Image
-            src={serverExploded} // TODO: Replace with 'pipeline.png'
+            src={serverExploded}
             alt="Ingestion Pipeline"
             fill
             style={{
@@ -609,25 +608,15 @@ export default function MarketingPage() {
               mixBlendMode: "lighten",
             }}
           />
+          {/* FIX: Using the Scanline here to kill the warning and add cool effect */}
+          <Scanline />
 
-          {/* Overlay Gradient for smooth fade */}
           <div
             style={{
               position: "absolute",
               inset: 0,
               background:
                 "linear-gradient(to top, #050505 5%, transparent 60%)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "2px",
-              background: "#58a6ff",
-              boxShadow: "0 0 20px #58a6ff",
             }}
           />
         </div>
