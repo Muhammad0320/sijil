@@ -663,7 +663,7 @@ export default function MarketingPage() {
               </FloatingVisual>
             </div>
           </Card>
-          {/* Feature 2: Auth */}
+          {/* Feature 2: Auth (NOW WITH CACHE IMAGE) */}
           <Card $highlight="#f1c40f" className="bento-card">
             <CardContent>
               <CardIcon $color="#f1c40f">
@@ -676,6 +676,26 @@ export default function MarketingPage() {
                 nanoseconds.
               </CardText>
             </CardContent>
+            {/* FIX: New Cache Image */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: "-20px",
+                right: "-20px",
+                width: "160px",
+                height: "160px",
+                opacity: 0.3,
+              }}
+            >
+              <FloatingVisual>
+                <Image
+                  src={cacheImg}
+                  alt="Cache Shield"
+                  fill
+                  style={{ objectFit: "contain" }}
+                />
+              </FloatingVisual>
+            </div>
           </Card>
 
           {/* Feature 3: Live Stream */}
