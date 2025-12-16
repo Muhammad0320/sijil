@@ -150,3 +150,41 @@ func (c *Client) sendBatch(logs []LogEntry)  {
 		fmt.Printf("LogEngine SDK Error: Server rejected batch (Status %d)\n", res.StatusCode)
 	}
 }
+
+func (c *Client) worker() {
+	defer c.wg.Done()
+
+	buffer := make([]LogEntry, 0, c.config.BatchSize)
+	ticker := time.NewTicker(c.config.Interval)
+	defer ticker.Stop()
+
+	flush := func ()  {
+		if len(buffer) == 0 {return}
+
+		// Copy buffer to avoid race cond during send
+		batch := make([]LogEntry, len(buffer))
+		copy(batch, buffer)
+
+		buffer = buffer[:0]
+		c.sendBatch(batch)
+	}
+
+	for {
+		select{
+		case entry:= <- c.queue: 
+			buffer = append(buffer, entry)
+			if len(buffer) >= c.config.BatchSize {
+				flush()
+			}
+		case <- ticker.C: 
+			flush()
+		case <- c.shutdown: 
+			for len(c.queue) > 0 {
+				buffer = append(buffer, <-c.queue)
+			}
+			flush()
+			return
+		}
+	}
+
+}
