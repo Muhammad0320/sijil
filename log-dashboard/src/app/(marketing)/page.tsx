@@ -296,7 +296,7 @@ const CardText = styled.p`
   color: #8b949e;
   font-size: 15px;
   line-height: 1.6;
-  max-width: 85%; /* Prevents text from hitting the image */
+  max-width: 80%; /* Prevents text from hitting the image */
 `;
 
 // --- NEW STYLES FOR PERFORMANCE ---
@@ -511,78 +511,6 @@ const SoftImage = styled.div`
   pointer-events: none;
 `;
 
-// const Card = styled.div<{ $colSpan?: number; $highlight?: string }>`
-//   background: rgba(13, 17, 23, 0.6);
-//   border: 1px solid rgba(48, 54, 61, 0.6);
-//   border-radius: 24px;
-//   padding: 32px;
-//   display: flex;
-//     flex-direction: column;
-//     justify-content: space-between;
-//     grid-column: span ${(p) => p.$colSpan || 1};
-//     position: relative;
-//     overflow: hidden;
-//     transition: all 0.3s ease;
-//     backdrop-filter: blur(12px);
-
-//     /* Spotlight */
-//     &::before {
-//       content: "";
-//       position: absolute;
-//       top: 0; left: 0; right: 0; bottom: 0;
-//       background: radial-gradient(
-//         800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-//         rgba(255, 255, 255, 0.06),
-//         transparent 40%
-//       );
-//       z-index: 0;
-//       opacity: 0;
-//       transition: opacity 0.3s;
-//     }
-//     &:hover::before { opacity: 1; }
-//     &:hover {
-//       border-color: ${(p) => p.$highlight || "#58a6ff"};
-//       transform: translateY(-4px);
-//       box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
-//     }
-//     @media (max-width: 1024px) { grid-column: span 1 !important; }
-//   `;
-
-// const CardContent = styled.div`
-//   position: relative;
-//   z-index: 2; /* Ensure content sits above the faded image */
-// `;
-
-// const CardIcon = styled.div<{ $color: string }>`
-//   width: 48px;
-//   height: 48px;
-//   border-radius: 12px;
-//   background: ${(p) => `${p.$color}15`};
-//   color: ${(p) => p.$color};
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
-//   margin-bottom: 24px;
-//   border: 1px solid ${(p) => `${p.$color}30`};
-//   box-shadow: 0 0 15px ${(p) => `${p.$color}20`};
-// `;
-
-// const CardTitle = styled.h3`
-//   font-size: 24px;
-//   font-weight: 700;
-//   margin-bottom: 12px;
-//   color: #fff;
-//   letter-spacing: -0.5px;
-// `;
-
-// // FIX 4: Text constraint
-// const CardText = styled.p`
-//   color: #8b949e;
-//   font-size: 15px;
-//   line-height: 1.6;
-//   max-width: 85%; /* Prevents text from hitting the image */
-// `;
-
 function Typewriter({ words }: { words: string[] }) {
   const [index, setIndex] = useState(0);
   const [subIndex, setSubIndex] = useState(0);
@@ -780,14 +708,14 @@ export default function MarketingPage() {
                 opacity: 0.3,
               }}
             >
-              <FloatingVisual>
+              <SoftImage>
                 <Image
                   src={cacheImg}
                   alt="Cache Shield"
                   fill
                   style={{ objectFit: "contain" }}
                 />
-              </FloatingVisual>
+              </SoftImage>
             </div>
           </Card>
 
@@ -803,6 +731,25 @@ export default function MarketingPage() {
                 pipes ingestion directly to connected clients. No polling. No
                 lag.
               </CardText>
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "-20px",
+                  right: "-20px",
+                  width: "160px",
+                  height: "160px",
+                  opacity: 0.3,
+                }}
+              >
+                <SoftImage>
+                  <Image
+                    src={websocket}
+                    alt="digital connection"
+                    fill
+                    style={{ objectFit: "contain" }}
+                  />
+                </SoftImage>
+              </div>
             </CardContent>
           </Card>
 
@@ -830,14 +777,14 @@ export default function MarketingPage() {
                 opacity: 0.15,
               }}
             >
-              <FloatingVisual>
+              <SoftImage>
                 <Image
                   src={vault}
                   alt="WAL"
                   fill
                   style={{ objectFit: "contain", objectPosition: "right" }}
                 />
-              </FloatingVisual>
+              </SoftImage>
             </div>
           </Card>
         </Grid>
