@@ -8,6 +8,7 @@ import hypercube from "../../../public/hypercube.png"; // Example image import
 import vault from "../../../public/vault-green.png"; // Example image import
 import serverExploded from "../../../public/server-exploded.png"; // Example image import
 import cacheImg from "../../../public/cache.png"; // Example image import
+import websocket from "../../../public/websocket.png"; // Example image import
 
 import { useEffect, useState } from "react";
 
@@ -233,7 +234,7 @@ const Card = styled.div<{ $colSpan?: number; $highlight?: string }>`
   transition: all 0.3s ease;
   backdrop-filter: blur(12px);
 
-  /* Spotlight Effect */
+  /* Spotlight */
   &::before {
     content: "";
     position: absolute;
@@ -250,7 +251,6 @@ const Card = styled.div<{ $colSpan?: number; $highlight?: string }>`
     opacity: 0;
     transition: opacity 0.3s;
   }
-
   &:hover::before {
     opacity: 1;
   }
@@ -259,7 +259,6 @@ const Card = styled.div<{ $colSpan?: number; $highlight?: string }>`
     transform: translateY(-4px);
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
   }
-
   @media (max-width: 1024px) {
     grid-column: span 1 !important;
   }
@@ -267,7 +266,7 @@ const Card = styled.div<{ $colSpan?: number; $highlight?: string }>`
 
 const CardContent = styled.div`
   position: relative;
-  z-index: 1;
+  z-index: 2; /* Ensure content sits above the faded image */
 `;
 
 const CardIcon = styled.div<{ $color: string }>`
@@ -292,10 +291,12 @@ const CardTitle = styled.h3`
   letter-spacing: -0.5px;
 `;
 
+// FIX 4: Text constraint
 const CardText = styled.p`
   color: #8b949e;
   font-size: 15px;
   line-height: 1.6;
+  max-width: 85%; /* Prevents text from hitting the image */
 `;
 
 // --- NEW STYLES FOR PERFORMANCE ---
@@ -460,68 +461,152 @@ const FloatingVisual = styled.div`
   pointer-events: none;
 `;
 
-// FIX: The Scanline Component (overlay for Hero)
+const scanlineAnim = keyframes`
+  0% { top: -20%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+`;
+
+// --- STYLES ---
+
+// FIX 2: Scanline Implementation
 const Scanline = styled.div`
   position: absolute;
-  top: 0;
   left: 0;
   right: 0;
-  height: 100%;
+  height: 20%; /* Height of the beam */
   background: linear-gradient(
     to bottom,
-    transparent 50%,
-    rgba(88, 166, 255, 0.05) 50%,
-    transparent 51%
+    transparent,
+    rgba(88, 166, 255, 0.3),
+    transparent
   );
-  background-size: 100% 4px;
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 20%;
-    background: linear-gradient(
-      to bottom,
-      transparent,
-      rgba(88, 166, 255, 0.2),
-      transparent
-    );
-    animation: ${scanline} 3s linear infinite;
-  }
+  /* The animation now moves 'top' from -20% to 100% of the parent */
+  animation: ${scanlineAnim} 4s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+`;
+
+// FIX 3: Soft Edge Image Container
+const SoftImage = styled.div`
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  animation: ${float} 6s ease-in-out infinite;
+
+  /* THIS is the magic: Fades the image edges into the card background */
+  mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(
+    circle at center,
+    black 40%,
+    transparent 100%
+  );
+
+  /* Blend mode helps dark images merge with dark cards */
+  mix-blend-mode: lighten;
+  opacity: 0.6; /* Subtle look */
   pointer-events: none;
 `;
 
-// --- COMPONENT ---
+// const Card = styled.div<{ $colSpan?: number; $highlight?: string }>`
+//   background: rgba(13, 17, 23, 0.6);
+//   border: 1px solid rgba(48, 54, 61, 0.6);
+//   border-radius: 24px;
+//   padding: 32px;
+//   display: flex;
+//     flex-direction: column;
+//     justify-content: space-between;
+//     grid-column: span ${(p) => p.$colSpan || 1};
+//     position: relative;
+//     overflow: hidden;
+//     transition: all 0.3s ease;
+//     backdrop-filter: blur(12px);
+
+//     /* Spotlight */
+//     &::before {
+//       content: "";
+//       position: absolute;
+//       top: 0; left: 0; right: 0; bottom: 0;
+//       background: radial-gradient(
+//         800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+//         rgba(255, 255, 255, 0.06),
+//         transparent 40%
+//       );
+//       z-index: 0;
+//       opacity: 0;
+//       transition: opacity 0.3s;
+//     }
+//     &:hover::before { opacity: 1; }
+//     &:hover {
+//       border-color: ${(p) => p.$highlight || "#58a6ff"};
+//       transform: translateY(-4px);
+//       box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+//     }
+//     @media (max-width: 1024px) { grid-column: span 1 !important; }
+//   `;
+
+// const CardContent = styled.div`
+//   position: relative;
+//   z-index: 2; /* Ensure content sits above the faded image */
+// `;
+
+// const CardIcon = styled.div<{ $color: string }>`
+//   width: 48px;
+//   height: 48px;
+//   border-radius: 12px;
+//   background: ${(p) => `${p.$color}15`};
+//   color: ${(p) => p.$color};
+//   display: flex;
+//   align-items: center;
+//   justify-content: center;
+//   margin-bottom: 24px;
+//   border: 1px solid ${(p) => `${p.$color}30`};
+//   box-shadow: 0 0 15px ${(p) => `${p.$color}20`};
+// `;
+
+// const CardTitle = styled.h3`
+//   font-size: 24px;
+//   font-weight: 700;
+//   margin-bottom: 12px;
+//   color: #fff;
+//   letter-spacing: -0.5px;
+// `;
+
+// // FIX 4: Text constraint
+// const CardText = styled.p`
+//   color: #8b949e;
+//   font-size: 15px;
+//   line-height: 1.6;
+//   max-width: 85%; /* Prevents text from hitting the image */
+// `;
+
 function Typewriter({ words }: { words: string[] }) {
   const [index, setIndex] = useState(0);
   const [subIndex, setSubIndex] = useState(0);
   const [reverse, setReverse] = useState(false);
 
-  // Blinking cursor logic
   useEffect(() => {
     if (index >= words.length) return;
-
     if (subIndex === words[index].length + 1 && !reverse) {
-      setTimeout(() => setReverse(true), 1000); // Wait before deleting
+      setTimeout(() => setReverse(true), 1500);
       return;
     }
-
     if (subIndex === 0 && reverse) {
       setTimeout(() => {
         setReverse(false);
-        setIndex((prev) => (prev + 1) % words.length); // Next word
+        setIndex((prev) => (prev + 1) % words.length);
       }, 0);
       return;
     }
-
     const timeout = setTimeout(
       () => {
         setSubIndex((prev) => prev + (reverse ? -1 : 1));
       },
       reverse ? 50 : 100
-    ); // Typing speed
-
+    );
     return () => clearTimeout(timeout);
   }, [subIndex, index, reverse, words]);
 
@@ -532,7 +617,6 @@ function Typewriter({ words }: { words: string[] }) {
     </Highlight>
   );
 }
-
 // --- MAIN PAGE ---
 export default function MarketingPage() {
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -600,23 +684,32 @@ export default function MarketingPage() {
         >
           <Image
             src={serverExploded}
-            alt="Ingestion Pipeline"
+            alt="Pipeline"
             fill
             style={{
               objectFit: "cover",
-              opacity: 0.9,
+              opacity: 0.8,
               mixBlendMode: "lighten",
             }}
           />
-          {/* FIX: Using the Scanline here to kill the warning and add cool effect */}
           <Scanline />
-
           <div
             style={{
               position: "absolute",
               inset: 0,
               background:
                 "linear-gradient(to top, #050505 5%, transparent 60%)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "2px",
+              background: "#58a6ff",
+              boxShadow: "0 0 20px #58a6ff",
             }}
           />
         </div>
@@ -653,14 +746,14 @@ export default function MarketingPage() {
                 opacity: 0.4,
               }}
             >
-              <FloatingVisual>
+              <SoftImage>
                 <Image
                   src={hypercube}
-                  alt="Hypertable"
+                  alt="Hypercube"
                   fill
                   style={{ objectFit: "contain" }}
                 />
-              </FloatingVisual>
+              </SoftImage>
             </div>
           </Card>
           {/* Feature 2: Auth (NOW WITH CACHE IMAGE) */}
