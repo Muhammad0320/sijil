@@ -17,6 +17,8 @@ const (
 	maxQueue = 4096
 	
 	workerCount = 3
+
+	retryCount = 3
 )
 
 type Config struct {
@@ -24,8 +26,7 @@ type Config struct {
 	APISecret string
 	Endpoint  string // For self hosted users
 
-	// The Tuning knobs
-	RetryCount int 
+	// The Tuning knob
 	FlushTime  time.Duration
 }
 
@@ -36,7 +37,6 @@ func DefaultConfig(key, secret string) Config {
 		APISecret: secret,
 		Endpoint: "http://localhost:8080/api/v1/logs",
 		FlushTime: 1 * time.Second,
-		RetryCount: 3,
 	}
 }
 
@@ -76,7 +76,7 @@ func NewClient(cfg Config) *Client {
 	if cfg.FlushTime == 0 || cfg.FlushTime < 500*time.Millisecond {
 		cfg.FlushTime = 1 * time.Second
 	}
-	
+
 
 	c := &Client{
 		config: cfg,
@@ -155,7 +155,7 @@ func (c *Client) sendWithRetry(logs []LogEntry)  {
 		return
 	}
 
-	for attempts := 0; attempts < c.config.RetryCount; attempts++ {
+	for attempts := 0; attempts < retryCount; attempts++ {
 		// Backoff: 100ms, 200ms, 400ms...
 		if attempts > 0 {
 			time.Sleep(time.Duration(100*1<<attempts) * time.Millisecond)

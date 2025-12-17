@@ -179,8 +179,8 @@ func InsertLog(ctx context.Context, db *pgxpool.Pool, log LogEntry) error {
 
 
 	insertSQL := `
-		INSERT INTO logs (timestamp, level, message, service, project_id) 
-		VALUES ($1, $2, $3, $4, $5)`
+		INSERT INTO logs (timestamp, level, message, service, project_id, data) 
+		VALUES ($1, $2, $3, $4, $5, $6)`
 
 	_, err := db.Exec(ctx, insertSQL,
 		logTime,
@@ -188,6 +188,7 @@ func InsertLog(ctx context.Context, db *pgxpool.Pool, log LogEntry) error {
 		log.Message,
 		log.Service,
 		log.ProjectID,
+		log.Data,
 	)
 	
 	if err != nil {
@@ -242,7 +243,7 @@ func GetLogs(ctx context.Context, db *pgxpool.Pool,  projectID ,limit, offset in
 	var logs []LogEntry
 	for rows.Next() {
 		var log LogEntry
-		err := rows.Scan(&log.Timestamp, &log.Level, &log.Message, &log.Service)
+		err := rows.Scan(&log.Timestamp, &log.Level, &log.Message, &log.Service, &log.Data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan log: %w", err)
 		}
