@@ -41,8 +41,23 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 		limiter := rate.NewLimiter(i.r, i.b)
 		i.ips[ip] = limiter
 	}
-	
+
 	return limiter
+}
+
+func (s *Server) rateLimitMiddleware(limit *IPRateLimiter) gin.HandlerFunc {
+
+	return func (c *gin.Context) {
+
+		limiter := limit.GetLimiter(c.ClientIP())
+		if !limiter.Allow() {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
+			return
+		}
+
+		c.Next()
+	}
+
 }
 
 // Control Room Guard
