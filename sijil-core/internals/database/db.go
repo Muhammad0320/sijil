@@ -26,7 +26,17 @@ type LogEntry struct {
 // ConnectDB tries to connect to the database and returns the connection.
 func ConnectDB(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 	fmt.Println("Attempting to connect with connection string:", connString)
-	db, err := pgxpool.New(ctx, connString)
+
+	config, err := pgxpool.ParseConfig(connString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse connection string: %w", err)
+	}
+
+	config.MaxConns = 60
+	config.MinConns = 10
+	config.MaxConnIdleTime = 30 * time.Minute
+
+	db, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
