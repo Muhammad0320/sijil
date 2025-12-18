@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
 	is_verified BOOLEAN DEFAULT FALSE,
 	verification_token TEXT,
+	verification_expires_at TIMESTAMP,
 	token_expires_at TIMESTAMP,
 	password_reset_token TEXT,
 	password_reset_expired TIMESTAMP,
@@ -260,12 +261,12 @@ type User struct {
 	PasswordHash string
 }
 
-func CreateUser(ctx context.Context, db *pgxpool.Pool, firstname, lastname, email, hashpassword string) (int, error) {
+func CreateUser(ctx context.Context, db *pgxpool.Pool, firstname, lastname, email, hashpassword string, vToken string, vExpiry time.Time) (int, error) {
 
 	var newUserID int
 	err := db.QueryRow(ctx,
-		`INSERT INTO users (firstname, lastname, email, password_hash) VALUES ($1, $2, $3, $4) RETURNING id`,
-		firstname, lastname, email, hashpassword,
+		`INSERT INTO users (firstname, lastname, email, password_hash, verification_token, verification_token_expires_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+		firstname, lastname, email, hashpassword, vToken, vExpiry,
 	).Scan(&newUserID)
 
 	if err != nil {

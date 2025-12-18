@@ -1,0 +1,7 @@
+=== RUN   TestRBAC_EndToEnd
+Attempting to connect with connection string: postgres://postgres:logpassword123@localhost:5433/log_db?sslmode=disable
+    intergration_test.go:39: Could not truncate DB: failed to connect to `user=postgres database=log_db`: [::1]:5433 (localhost): failed SASL auth: FATAL: password authentication failed for user "postgres" (SQLSTATE 28P01)
+--- FAIL: TestRBAC_EndToEnd (0.09s)
+FAIL
+FAIL	sijil-core/internals/server	0.403s
+FAIL
