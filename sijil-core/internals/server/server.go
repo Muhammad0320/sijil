@@ -83,7 +83,9 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 		authGroup.POST("/login", s.handleUserLogin)
 
 		// Sensitive routes
-		authGroup.GET("/verify", s.rateLimitMiddleware(authLimiter))
+		authGroup.GET("/verify", s.rateLimitMiddleware(authLimiter), s.handleVerifyEmail)
+		authGroup.POST("/forgot-password", s.rateLimitMiddleware(authLimiter), s.handleForgotPassword)
+		authGroup.POST("/reset-password", s.rateLimitMiddleware(authLimiter), s.handleResetPassword)
 	}
 
 	// For our Control Room
