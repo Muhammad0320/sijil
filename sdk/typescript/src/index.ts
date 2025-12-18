@@ -30,22 +30,23 @@ export class SijilLogger {
 
   private queue: LogEntry[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
-  private activeRequests = 0;
-  private readonly MAX_CURRENT_REQUEST = 5;
-  private serviceName = "default";
+  private isClosed = false;
+  private serviceName: string = "";
+
+  // Worker semaphore
+  private activeWorkers: number = 0;
 
   constructor(config: Config) {
     if (!config.apiKey || !config.apiSecret) {
       throw new Error("Sijil: Credentials Missing!");
     }
 
+    this.serviceName = config.service || "service";
     this.config = {
       apiKey: config.apiKey,
       apiSecret: config.apiSecret,
-      endpoint: config.endpoint || "http://localhost:8080/api/v1/logs",
+      endpoint: config.endpoint || ENDPOINT,
       flushInterval: Math.max(config.flushInterval || 1000, 250),
-      batchSize: config.batchSize || 100,
-      maxRetries: config.maxRetries || 3,
     };
 
     this.timer = setInterval(() => this.flush(), this.config.flushInterval);
@@ -70,7 +71,7 @@ export class SijilLogger {
 
   private push(level: LogEntry["level"], message: string, data?: Object) {
     // Safety Cap
-    if (this.queue.length >= 5000) {
+    if (this.queue.length >= MAX_QUEUE_SIZE) {
       console.warn("Sijil Queue Full. Dropping logs");
       return;
     }
@@ -82,24 +83,24 @@ export class SijilLogger {
       timestamp: new Date().toISOString(),
     });
 
-    if (this.queue.length >= this.config.batchSize) {
+    if (this.queue.length >= BATCH_SIZE) {
       this.flush();
     }
   }
 
   private async flush() {
     if (this.queue.length === 0) return;
-    if (this.activeRequests >= this.MAX_CURRENT_REQUEST) return;
+    if (this.activeWorkers >= WORKER_COUNT) return;
 
-    const batch = this.queue.splice(0, this.config.batchSize);
-    this.activeRequests++;
+    const batch = this.queue.splice(0, BATCH_SIZE);
+    this.activeWorkers++;
 
     try {
       await this.sendWithRetry(batch);
     } catch (error) {
       console.error("Sijil Delivery failed:", error);
     } finally {
-      this.activeRequests--;
+      this.activeWorkers--;
     }
   }
 
@@ -116,16 +117,28 @@ export class SijilLogger {
       });
 
       if (!res.ok) {
+        if (res.status >= 400 && res.status < 500) {
+          console.error(`Sijil Rejected: ${res.status}`);
+          return;
+        }
         if (res.status >= 500) throw new Error(`Server Error ${res.status}`);
-        if (res.status >= 400) console.error(`Sijil Rejected: ${res.status}`);
       }
     } catch (error) {
-      if (attempt < this.config.maxRetries) {
+      if (attempt < MAX_RETRIES) {
         // Exponential Backoff
         await new Promise((r) => setTimeout(r, 100 * Math.pow(2, attempt)));
         return this.sendWithRetry(batch, attempt + 1);
       }
       throw error;
+    }
+  }
+
+  public async close() {
+    this.isClosed = true;
+    if (this.timer) clearInterval(this.timer);
+
+    while (this.queue.length > 0) {
+      await this.flush();
     }
   }
 }
