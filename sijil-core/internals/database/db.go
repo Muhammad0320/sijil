@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS users (
 	is_verified BOOLEAN DEFAULT FALSE,
 	verification_token TEXT,
 	token_expires_at TIMESTAMP,
+	password_reset_token TEXT,
+	password_reset_expired TIMESTAMP,
     avatar_url TEXT,
 	plan VARCHAR(50) NOT NULL DEFAULT 'free',
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -634,5 +636,43 @@ func SetVerificationToken(ctx context.Context, db *pgxpool.Pool, userID int, tok
 	return err
 } 
 
+func VerifyUserAccount(ctx context.Context, db *pgxpool.Pool, tokenHash string ) (bool, error) {
+
+	res, err := db.Exec(ctx, `
+	UPDATE users 
+	SET is_verified = TRUE, verification_token = NULL
+    WHERE verification_token = $1`, tokenHash)
+
+	if err != nil {
+		return false, err 
+	}
+
+	return res.RowsAffected() > 0, nil 
+}
 
 
+func SetPasswordResetToken(ctx context.Context, db *pgxpool.Pool, tokenHash string, expiry time.Time, email string) error {
+
+	_, err := db.Exec(ctx, `
+	UPDATE users
+	SET password_reset_token = $1, password_reset_expired = $2
+	WHERE email = $3
+	`, tokenHash, expiry, email)
+
+	return err
+}
+
+
+func ResetPasswordByToken(ctx context.Context, db *pgxpool.Pool, tokenHash string, newPasswordHash string) (bool, error) {
+	res, err := db.Exec(ctx, `
+	UPDATE users
+	SET password_hash = $1, password_token_reset = NULL, passworrd_reset_expired
+	WHERE password_token_reset = $2 AND password_reset_expired > NOW()
+	`, newPasswordHash, tokenHash)
+	
+	if err != nil {
+		return false, err
+	}
+
+	return res.RowsAffected() > 0, nil
+}
