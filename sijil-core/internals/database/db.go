@@ -53,9 +53,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
 	is_verified BOOLEAN DEFAULT FALSE,
-	verification_token VARCHAR(255),
-	password_reset_token VARCHAR(255),
-	password_reset_expired TIMESTAMP,
+	verification_token TEXT,
+	token_expires_at TIMESTAMP,
     avatar_url TEXT,
 	plan VARCHAR(50) NOT NULL DEFAULT 'free',
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -629,3 +628,11 @@ func GetProjectMembers(ctx context.Context, db *pgxpool.Pool, projectID int) ([]
 
 	return members, nil
 }
+
+func SetVerificationToken(ctx context.Context, db *pgxpool.Pool, userID int, tokenHash string) error {
+	_, err := db.Exec(ctx, "UPDATE users SET verification_token = $1 WHERE id = $2", tokenHash, userID)
+	return err
+} 
+
+
+
