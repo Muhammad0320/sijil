@@ -3,7 +3,7 @@ version: "3"
 services:
   db:
     image: timescale/timescaledb:latest-pg14
-    container_name: log-engine-db
+    container_name: sijil-core-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD}

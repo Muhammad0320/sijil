@@ -1,4 +1,4 @@
-package logengine
+package sijil
 
 import (
 	"bytes"

@@ -3,8 +3,8 @@ package hub
 import (
 	"encoding/json"
 	"log"
-	"log-engine/internals/database"
 	"net/http"
+	"sijil-core/internals/database"
 	"time"
 
 	"github.com/gorilla/websocket"

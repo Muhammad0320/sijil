@@ -1,10 +1,15 @@
+const ENDPOINT = "http://localhost:8080/api/v1/logs";
+const BATCH_SIZE = 100;
+const MAX_RETRIES = 3;
+const MAX_QUEUE_SIZE = 4096;
+const WORKER_COUNT = 3;
+
 interface Config {
   apiKey: string;
   apiSecret: string;
   endpoint?: string;
   flushInterval?: number;
-  batchSize?: number;
-  maxRetries?: number;
+  service?: string;
 }
 
 interface LogEntry {
@@ -15,8 +20,14 @@ interface LogEntry {
   data?: Record<string, any>;
 }
 
-export class Logengine {
-  private config: Required<Config>;
+export class SijilLogger {
+  private config: {
+    apiKey: string;
+    apiSecret: string;
+    endpoint: string;
+    flushInterval: number;
+  };
+
   private queue: LogEntry[] = [];
   private timer: NodeJS.Timeout | null = null;
   private activeRequests = 0;

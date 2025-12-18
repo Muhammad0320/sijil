@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log-engine/internals/database"
 	"os"
+	"sijil-core/internals/database"
 	"sync"
 )
 

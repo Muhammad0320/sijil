@@ -2,8 +2,8 @@ package server
 
 import (
 	"fmt"
-	"log-engine/internals/database"
 	"os"
+	"sijil-core/internals/database"
 	"strconv"
 	"time"
 
@@ -57,7 +57,7 @@ func (s *Server) DogFoodMiddleware() gin.HandlerFunc {
 		logEntry := database.LogEntry{
 			Timestamp: time.Now(),
 			Level: level,
-			Service: "log-engine-internal",
+			Service: "sijil-core-internal",
 			Message: message,
 			ProjectID: internalPID,
 		}

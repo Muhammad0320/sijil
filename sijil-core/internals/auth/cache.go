@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/sha256"
-	"log-engine/internals/database"
+	"sijil-core/internals/database"
 	"sync"
 	"time"
 
