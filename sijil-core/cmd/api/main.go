@@ -36,7 +36,7 @@ func main() {
 		log.Fatal("FATAL: DB_PASSWORD environment variable is not set ")
 	}
 
-	connString := fmt.Sprintf("postgres://postgres:%s@localhost:5433/log_db?sslmode=disable", dbPassword)
+	connString := fmt.Sprintf("postgres://postgres:%s@127.0.0.1:5433/log_db?sslmode=disable", dbPassword)
 
 	db, err := database.ConnectDB(ctx, connString)
 	if err != nil {
