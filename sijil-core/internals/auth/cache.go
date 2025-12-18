@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"sijil-core/internals/database"
+	"sijil-core/internals/utils"
 	"sync"
 	"time"
 
@@ -16,8 +17,8 @@ const (
 )
 
 type ProjectCacheEntry struct {
-	ProjectID int 
-	Expires int64
+	ProjectID int
+	Expires   int64
 }
 
 // The Room (shard)
@@ -29,17 +30,17 @@ type CasheShard struct {
 // The Hallway (The manager)
 type AuthCache struct {
 	shards [ShardCount]*CasheShard
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
 }
 
 func NewAuthCache(db *pgxpool.Pool) *AuthCache {
-	c := &AuthCache{db: db} 
+	c := &AuthCache{db: db}
 	for i := range ShardCount {
 		c.shards[i] = &CasheShard{
 			items: make(map[string]ProjectCacheEntry),
 		}
 	}
-	return c; 
+	return c
 }
 
 func (c *AuthCache) getShard(apiKey string) *CasheShard {
@@ -50,10 +51,10 @@ func (c *AuthCache) getShard(apiKey string) *CasheShard {
 }
 
 func (c *AuthCache) ValidateAPIKey(ctx context.Context, apiKey, apiSecret string) (int, bool) {
-    
+
 	// Step 1: Check RAM (fast path)
-	shard := c.getShard(apiKey) 
-	
+	shard := c.getShard(apiKey)
+
 	shard.RLock()
 	entry, exists := shard.items[apiKey]
 	shard.RUnlock()
@@ -67,19 +68,19 @@ func (c *AuthCache) ValidateAPIKey(ctx context.Context, apiKey, apiSecret string
 	if err != nil {
 		return 0, false
 	}
-	
+
 	// Step 3: Check secret (slow math)
-	if !ComparePasswordHash(apiSecret, project.ApiSecretHash) {
+	if !utils.ComparePasswordHash(apiSecret, project.ApiSecretHash) {
 		return 0, false
 	}
 
-	// Step 4: Update cache	
+	// Step 4: Update cache
 	shard.Lock()
 	shard.items[apiKey] = ProjectCacheEntry{
 		ProjectID: project.ID,
-		Expires: time.Now().Add(TTL).Unix(),
+		Expires:   time.Now().Add(TTL).Unix(),
 	}
 	shard.Unlock()
 
-	return  project.ID, true
+	return project.ID, true
 }
