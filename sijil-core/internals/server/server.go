@@ -154,6 +154,18 @@ func (s *Server) handleForgotPassword(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "If an account exists, a reset link has been sent"})
 }
 
+func (s *Server) handleResetPassword(c *gin.Context) {
+
+	var req struct {
+		Token string `json:"token" binding:"required"`
+		NewPassord string `json:"password" binding:"required,min=8"`
+	}
+
+	hashToken := utils.Hashtoken(req.Token)
+	hashPassword := 
+
+}
+
 func (s *Server) handleLogIngest(c *gin.Context) {
 	ProjectID := c.GetInt("projectID")
 
@@ -297,7 +309,7 @@ func (s *Server) handleUserRegister(c *gin.Context) {
 		return
 	}
 
-	hash, err := auth.HashPasswod(req.Password)
+	hash, err := utils.HashPasswod(req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to has password"})
 		return
