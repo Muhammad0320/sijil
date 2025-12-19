@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"errors"
 	"sijil-core/internals/auth"
 )
 
@@ -32,4 +33,18 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 	}
 
 	return auth.CreateJWT(s.jwtSecret, id)
+}
+
+func (s *Service) Login(ctx context.Context, req LoginRequest) (string, error) {
+
+	user, err := s.repo.GetByEmail(ctx, req.Email)
+	if err != nil {
+		return "", errors.New("invalid credentials")
+	}
+
+	if !auth.ComparePasswordHash(req.Password, user.PasswordHash) {
+		return "", errors.New("invalid credentials")
+	}
+
+	return auth.CreateJWT(s.jwtSecret, user.ID)
 }
