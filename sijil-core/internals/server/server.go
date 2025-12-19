@@ -163,7 +163,7 @@ func (s *Server) handleResetPassword(c *gin.Context) {
 	}
 
 	hashToken := utils.Hashtoken(req.Token)
-	hashPassword, _ := utils.HashPasswod(req.NewPassord)
+	hashPassword, _ := auth.HashPasswod(req.NewPassord)
 
 	success, err := database.ResetPasswordByToken(c.Request.Context(), s.db, hashToken, hashPassword)
 	if err != nil || !success {
@@ -317,7 +317,7 @@ func (s *Server) handleUserRegister(c *gin.Context) {
 		return
 	}
 
-	hash, err := utils.HashPasswod(req.Password)
+	hash, err := auth.HashPasswod(req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to has password"})
 		return
@@ -338,6 +338,11 @@ func (s *Server) handleUserRegister(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 		return
 	}
+
+	go func() {
+		// Mock for Resend later inshaallah
+		fmt.Printf("Verification Link: ")
+	}()
 
 	tokenString, err := auth.CreateJWT(s.jwtSecret, newUserId)
 	if err != nil {
@@ -371,7 +376,7 @@ func (s *Server) handleUserLogin(c *gin.Context) {
 		return
 	}
 
-	if err := utils.ComparePasswordHash(req.Password, user.PasswordHash); !err {
+	if err := auth.ComparePasswordHash(req.Password, user.PasswordHash); !err {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
@@ -408,7 +413,7 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 	randSecret, _ := utils.GenerateRandomString(16)
 	apiSecret := "sk_live_" + randSecret
 
-	secretHash, err := utils.HashPasswod(apiSecret)
+	secretHash, err := auth.HashPasswod(apiSecret)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to secure peoject keys"})
 		return

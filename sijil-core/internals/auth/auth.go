@@ -8,19 +8,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func HashPasswod(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func ComparePasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return  err == nil
-}
-
 func CreateJWT(jwtSecret string, userID int) (string, error) {
 
-		claims := jwt.MapClaims{
+	claims := jwt.MapClaims{
 		"sub": userID,
 		"iat": time.Now().Unix(),
 		"exp": time.Now().Add(time.Hour * 24 * 7).Unix(),
@@ -31,5 +21,15 @@ func CreateJWT(jwtSecret string, userID int) (string, error) {
 		return "", fmt.Errorf("failed to sign token: %w", err)
 	}
 
-	return tokenString, nil 
+	return tokenString, nil
+}
+
+func HashPasswod(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+func ComparePasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
