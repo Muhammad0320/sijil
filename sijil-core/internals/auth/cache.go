@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"sijil-core/internals/database"
-	"sijil-core/internals/utils"
 	"sync"
 	"time"
 
@@ -70,7 +69,7 @@ func (c *AuthCache) ValidateAPIKey(ctx context.Context, apiKey, apiSecret string
 	}
 
 	// Step 3: Check secret (slow math)
-	if !utils.ComparePasswordHash(apiSecret, project.ApiSecretHash) {
+	if !ComparePasswordHash(apiSecret, project.ApiSecretHash) {
 		return 0, false
 	}
 
