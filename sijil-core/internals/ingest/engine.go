@@ -17,24 +17,27 @@ import (
 const (
 	BatchSize     = 2000
 	FlushInterval = 1 * time.Second
-	WorkerCount = 50
-	QueueSize = 50_000
+	WorkerCount   = 50
+	QueueSize     = 50_000
 )
 
 type IngestionEngine struct {
-	db *pgxpool.Pool 
-	Wal *WAL
-	hub *hub.Hub
+	db       *pgxpool.Pool
+	Wal      *WAL
+	hub      *hub.Hub
 	LogQueue chan database.LogEntry
-	wg sync.WaitGroup
+	wg       sync.WaitGroup
+
+	flushNotify chan struct{}
 }
 
 func NewIngestionEngine(db *pgxpool.Pool, wal *WAL, h *hub.Hub) *IngestionEngine {
 	return &IngestionEngine{
-		db: db,
-		Wal: wal, 
-		hub: h,
-		LogQueue: make(chan database.LogEntry, QueueSize),
+		db:          db,
+		Wal:         wal,
+		hub:         h,
+		LogQueue:    make(chan database.LogEntry, QueueSize),
+		flushNotify: make(chan struct{}),
 	}
 }
 
@@ -44,13 +47,13 @@ func (e *IngestionEngine) Start(ctx context.Context) {
 	expvar.Publish("ingest_queue_depth", expvar.Func(func() interface{} {
 		return len(e.LogQueue)
 	}))
-	
+
 	// Tell the Tracker how many workers we're hiring
 	e.wg.Add(WorkerCount)
 	for i := range WorkerCount {
-	  go e.worker(ctx, i)
+		go e.worker(ctx, i)
 	}
-	
+
 }
 
 func (e *IngestionEngine) Shutdown() {
@@ -71,8 +74,8 @@ func (e *IngestionEngine) worker(ctx context.Context, id int) {
 	for {
 
 		select {
-		case entry := <- e.LogQueue: 
-			batch = append(batch, entry) 
+		case entry := <-e.LogQueue:
+			batch = append(batch, entry)
 
 			if len(batch) >= BatchSize {
 				WorkerWake()
@@ -80,18 +83,18 @@ func (e *IngestionEngine) worker(ctx context.Context, id int) {
 				WorkerSleep()
 				batch = batch[:0]
 			}
-		case <- ticker.C:
+		case <-ticker.C:
 			if len(batch) > 0 {
 				WorkerWake()
 				e.flush(ctx, batch)
-				WorkerSleep() 
+				WorkerSleep()
 				batch = batch[:0]
 			}
-		case <- ctx.Done(): 
+		case <-ctx.Done():
 			if len(batch) > 0 {
 				WorkerWake()
 				e.flush(ctx, batch)
-				WorkerSleep() 
+				WorkerSleep()
 			}
 			return
 		}
@@ -99,7 +102,6 @@ func (e *IngestionEngine) worker(ctx context.Context, id int) {
 	}
 
 }
-
 
 func (e *IngestionEngine) flush(ctx context.Context, batch []database.LogEntry) {
 
@@ -115,25 +117,43 @@ func (e *IngestionEngine) flush(ctx context.Context, batch []database.LogEntry) 
 	}
 
 	_, err := e.db.CopyFrom(
-		ctx, 
+		ctx,
 		pgx.Identifier{"logs"},
 		[]string{"timestamp", "level", "message", "service", "project_id"},
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
 		log.Printf("⚠️ BATCH INSERT FAILED %s", err)
-		RecordError() 
+		RecordError()
 		return
 	}
 
-	if err := e.Wal.Clear(); err != nil {
-		log.Printf("⚠️ WAL clear failed: %v", err)
+	select {
+	case e.flushNotify <- struct{}{}:
+	default:
+
 	}
 
 	RecordFlushed(len(batch))
 
-	
 	for _, row := range batch {
 		e.hub.BroadcastLog(row)
+	}
+}
+
+func (e *IngestionEngine) walJanitor(ctx context.Context) {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-e.flushNotify:
+		case <-ticker.C:
+			if err := e.Wal.Clear(); err != nil {
+				log.Printf("Janitor WAL clear failed: %v", err)
+			}
+		case <-ctx.Done():
+			return
+		}
 	}
 }
