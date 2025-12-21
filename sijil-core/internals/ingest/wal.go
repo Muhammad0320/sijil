@@ -61,5 +61,14 @@ func (w *WAL) openSegment(seq int) error {
 	w.currentSize = stat.Size()
 
 	return nil
+}
 
+// rotate closes the current file and opens the next sequence
+func (w *WAL) rotate() error {
+	if w.activeFile != nil {
+		w.activeFile.Close()
+	}
+
+	newSeq := w.activeSeq + 1
+	return w.openSegment(newSeq)
 }
