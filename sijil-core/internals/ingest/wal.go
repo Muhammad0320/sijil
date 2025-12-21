@@ -3,6 +3,7 @@ package ingest
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -43,4 +44,22 @@ func (w *WAL) findLastSegment() (int, error) {
 	}
 
 	return maxSeq, nil
+}
+
+func (w *WAL) openSegment(seq int) error {
+
+	filename := filepath.Join(w.dir, fmt.Sprintf("segment-%06d", seq))
+
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open segment %d, %w", seq, err)
+	}
+
+	stat, _ := f.Stat()
+	w.activeFile = f
+	w.activeSeq = seq
+	w.currentSize = stat.Size()
+
+	return nil
+
 }
