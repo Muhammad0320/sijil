@@ -8,6 +8,7 @@ import (
 	"sijil-core/internals/database"
 	"sijil-core/internals/hub"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -22,27 +23,28 @@ const (
 )
 
 type IngestionEngine struct {
-	db       *pgxpool.Pool
-	Wal      *WAL
-	hub      *hub.Hub
-	LogQueue chan database.LogEntry
-	wg       sync.WaitGroup
-
-	flushNotify chan struct{}
+	db            *pgxpool.Pool
+	Wal           *WAL
+	hub           *hub.Hub
+	LogQueue      chan database.LogEntry
+	wg            sync.WaitGroup
+	activeWorkers int32
 }
 
 func NewIngestionEngine(db *pgxpool.Pool, wal *WAL, h *hub.Hub) *IngestionEngine {
 	return &IngestionEngine{
-		db:          db,
-		Wal:         wal,
-		hub:         h,
-		LogQueue:    make(chan database.LogEntry, QueueSize),
-		flushNotify: make(chan struct{}),
+		db:       db,
+		Wal:      wal,
+		hub:      h,
+		LogQueue: make(chan database.LogEntry, QueueSize),
 	}
 }
 
 func (e *IngestionEngine) Start(ctx context.Context) {
 	fmt.Printf("Staring ingesting engine with %d workers", WorkerCount)
+
+	e.wg.Add(1)
+	go e.walJanitor(ctx)
 
 	expvar.Publish("ingest_queue_depth", expvar.Func(func() interface{} {
 		return len(e.LogQueue)
@@ -79,27 +81,36 @@ func (e *IngestionEngine) worker(ctx context.Context, id int) {
 
 			if len(batch) >= BatchSize {
 				WorkerWake()
-				e.flush(ctx, batch)
+				e.safeFlush(ctx, batch)
 				WorkerSleep()
 				batch = batch[:0]
 			}
 		case <-ticker.C:
 			if len(batch) > 0 {
 				WorkerWake()
-				e.flush(ctx, batch)
+				e.safeFlush(ctx, batch)
 				WorkerSleep()
 				batch = batch[:0]
 			}
 		case <-ctx.Done():
 			if len(batch) > 0 {
 				WorkerWake()
-				e.flush(ctx, batch)
+				e.safeFlush(ctx, batch)
 				WorkerSleep()
 			}
 			return
 		}
 
 	}
+
+}
+
+func (e *IngestionEngine) safeFlush(ctx context.Context, batch []database.LogEntry) {
+
+	atomic.AddInt32(&e.activeWorkers, 1)  // "I'm active"
+	atomic.AddInt32(&e.activeWorkers, -1) // "I'm Done"
+
+	e.flush(ctx, batch)
 
 }
 
@@ -128,12 +139,6 @@ func (e *IngestionEngine) flush(ctx context.Context, batch []database.LogEntry) 
 		return
 	}
 
-	select {
-	case e.flushNotify <- struct{}{}:
-	default:
-
-	}
-
 	RecordFlushed(len(batch))
 
 	for _, row := range batch {
@@ -142,15 +147,24 @@ func (e *IngestionEngine) flush(ctx context.Context, batch []database.LogEntry) 
 }
 
 func (e *IngestionEngine) walJanitor(ctx context.Context) {
+	defer e.wg.Done()
+
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-e.flushNotify:
 		case <-ticker.C:
-			if err := e.Wal.Clear(); err != nil {
-				log.Printf("Janitor WAL clear failed: %v", err)
+			queueLen := len(e.LogQueue)
+			active := e.activeWorkers
+
+			if queueLen == 0 && active == 0 {
+				if err := e.Wal.Clear(); err != nil {
+					log.Printf("Janitor WAL clear failed: %v", err)
+				} else {
+					fmt.Println("Janitor: WAL cleared (system idle)")
+				}
+
 			}
 		case <-ctx.Done():
 			return
