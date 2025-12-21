@@ -26,7 +26,7 @@ func setupTestServer(t *testing.T) *Server {
 	if dbPassword == "" {
 		dbPassword = "logpassword123"
 	}
-	connString := fmt.Sprintf("postgres://postgres:%s@127.0.0.1:5434/log_db?sslmode=disable", dbPassword)
+	connString := fmt.Sprintf("postgres://postgres:%s@127.0.0.1:5433/log_db?sslmode=disable", dbPassword)
 
 	ctx := context.Background()
 	db, err := database.ConnectDB(ctx, connString)

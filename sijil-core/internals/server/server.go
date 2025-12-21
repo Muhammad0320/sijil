@@ -10,6 +10,7 @@ import (
 	"sijil-core/internals/auth"
 	"sijil-core/internals/database"
 	"sijil-core/internals/hub"
+	"sijil-core/internals/identity"
 	"sijil-core/internals/ingest"
 	"sijil-core/internals/utils"
 	"strconv"
@@ -28,16 +29,19 @@ type Server struct {
 	authCache    *auth.AuthCache
 	jwtSecret    string
 	// -----
-	Router *gin.Engine
+	Router          *gin.Engine
+	identityHandler *identity.Handler
 }
 
-func NewServer(db *pgxpool.Pool, ingestEngine *ingest.IngestionEngine, hub *hub.Hub, authCache *auth.AuthCache, jwtSecret string) *Server {
+func NewServer(db *pgxpool.Pool, ingestEngine *ingest.IngestionEngine, hub *hub.Hub, authCache *auth.AuthCache, jwtSecret string, identityHandler *identity.Handler) *Server {
 	s := &Server{
 		db:           db,
 		ingestEngine: ingestEngine,
 		hub:          hub,
 		authCache:    authCache,
 		jwtSecret:    jwtSecret,
+
+		identityHandler: identityHandler,
 	}
 
 	router := gin.Default()
@@ -78,8 +82,8 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 
 	authGroup := apiv1.Group("/auth")
 	{
-		authGroup.POST("/register", s.handleUserRegister)
-		authGroup.POST("/login", s.handleUserLogin)
+		authGroup.POST("/register", s.identityHandler.Register)
+		authGroup.POST("/login", s.identityHandler.Login)
 
 		// Sensitive routes
 		authGroup.GET("/verify", s.rateLimitMiddleware(rate.Limit(1.0/60.0), 5), s.handleVerifyEmail)
