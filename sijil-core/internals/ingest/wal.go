@@ -1,134 +1,46 @@
 package ingest
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
-	"sijil-core/internals/database"
+	"strings"
 	"sync"
 )
 
+const (
+	MaxSegmentSize = 10 * 1024 * 1024
+	WalDir         = "wal_data"
+)
+
 type WAL struct {
-	mu sync.Mutex
-	file *os.File 
-	path string
+	dir         string
+	mu          sync.Mutex
+	activeFile  *os.File
+	activeSeq   int
+	currentSize int64
 }
 
-func NewWal(path string) (*WAL, error) {
+func (w *WAL) findLastSegment() (int, error) {
 
-	file, err := os.OpenFile(path, os.O_APPEND | os.O_CREATE | os.O_RDWR, 0644)
+	entries, err := os.ReadDir(w.dir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open WAL: %w", err)
+		return 0, err
 	}
 
-	return &WAL{
-		file: file,
-		path: path,
-		}, nil
-}
-
-func (w *WAL) WriteLog(entry database.LogEntry) error {
-
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	data, err := json.Marshal(entry)
-	if err != nil {
-		return fmt.Errorf("wal marshal error: %w", err)
-	}
-
-	if _, err := w.file.Write(data); err != nil {
-		return fmt.Errorf("wal write error: %w", err)
-	}
-
-	// Sync (The paranoid step)
-	if err := w.file.Sync(); err != nil {
-		return fmt.Errorf("wal sync error: %w", err)
-	}
-
-	return  nil 
-}
-
-func (w *WAL) WriteBatch(entries []database.LogEntry) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	var buffer bytes.Buffer
-	buffer.Grow(len(entries) * 150)
-
-	for _, entry := range entries {
-		data, err := json.Marshal(entry) 
-		if err != nil {
-			return fmt.Errorf("wal marshal error: %w", err)
+	maxSeq := 0
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), "segment-") && strings.HasSuffix(e.Name(), ".log") {
+			var seq int
+			_, err := fmt.Sscanf(e.Name(), "segment-%d.log", &seq)
+			if err == nil && seq > maxSeq {
+				maxSeq = seq
+			}
 		}
-		buffer.Write(data)
-		buffer.WriteByte('\n')
+	}
+	// If no files exist, start at 1
+	if maxSeq == 0 {
+		return 1, nil
 	}
 
-	if _, err := w.file.Write(buffer.Bytes()); err != nil {
-		return fmt.Errorf("wal write error: %w", err)
-	}
-
-	// Sync (The paranoid step)
-	if err := w.file.Sync(); err != nil {
-		return fmt.Errorf("wal sync error: %w", err)
-	}
-
-	return nil 
-}
-
-func (w *WAL) Close() error {
-	return w.file.Close()
-}
-
-func (w *WAL) Recover() ([]database.LogEntry, error) {
-
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	_, err :=w.file.Seek(0, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	var logs []database.LogEntry
-	
-	// Use json decoder instead of scanner. It allows read object-by-object
-	decoder := json.NewDecoder(w.file)
-
-	for decoder.More() {
-		var entry database.LogEntry
-		if err := decoder.Decode(&entry); err != nil {	
-			fmt.Printf("⚠️ WAL corrupt Chunk: %v\n", err)
-			continue
-		}
-		logs = append(logs, entry)
-	}
-
-	return  logs, nil 
-}
-
-func (w *WAL) Clear() error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	// 1. Close the existing handle to release the Windows lock
-	if err := w.file.Close(); err != nil {
-		return fmt.Errorf("failed to close wal for clearing: %w", err)
-	}
-
-	// 2. Truncate by PATH (The Nuclear Option)
-	if err := os.Truncate(w.path, 0); err != nil {
-		return fmt.Errorf("failed to truncate wal: %w", err)
-	}
-
-	// 3. Re-open the file
-	file, err := os.OpenFile(w.path, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to reopen wal: %w", err)
-	}
-
-	w.file = file
-	return nil
+	return maxSeq, nil
 }
