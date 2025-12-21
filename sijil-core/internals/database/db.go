@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -21,6 +22,14 @@ type LogEntry struct {
 	Service   string                 `json:"service"`
 	ProjectID int                    `json:"-"`
 	Data      map[string]interface{} `json:"data,omitempty"`
+}
+
+func (l *LogEntry) Serialize() ([]byte, error) {
+	return json.Marshal(l)
+}
+
+func (l *LogEntry) Deserialize(data []byte) error {
+	return json.Unmarshal(data, l)
 }
 
 // ConnectDB tries to connect to the database and returns the connection.
