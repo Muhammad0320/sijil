@@ -73,14 +73,23 @@ func (r *postgresRepository) GetByID(ctx context.Context, id int) (*User, error)
 }
 
 func (r *postgresRepository) VerifyUserAccount(ctx context.Context, token string) error {
-	_, err := r.db.Exec(ctx, `
+	commonTag, err := r.db.Exec(ctx, `
 	UPDATE users 
 	SET is_verified = TRUE, 
 		verification_token = NULL,
 		verification_token_expired = NULL
 	WHERE verification_token = $1
 	AND verification_token_expires > NOW()`, token)
-	return err
+
+	if err != nil {
+		return fmt.Errorf("db verification error: %w", err)
+	}
+
+	if commonTag.RowsAffected() == 0 {
+		return errors.New("invalid or expired verification token")
+	}
+
+	return nil
 }
 
 func (r *postgresRepository) SetPasswordResetToken(ctx context.Context, email string, token string, expiry time.Time) error {
