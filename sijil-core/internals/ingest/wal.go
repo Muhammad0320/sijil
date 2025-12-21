@@ -25,6 +25,26 @@ type WAL struct {
 	currentSize int64
 }
 
+func NewWal(dir string) (*WAL, error) {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create wal dir: %w", err)
+	}
+
+	w := &WAL{dir: dir}
+
+	// Find the latest segment to continue writing, or start fresh
+	lastSeq, err := w.findLastSegment()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := w.openSegment(lastSeq); err != nil {
+		return nil, err
+	}
+
+	return w, nil
+}
+
 func (w *WAL) findLastSegment() (int, error) {
 
 	entries, err := os.ReadDir(w.dir)
