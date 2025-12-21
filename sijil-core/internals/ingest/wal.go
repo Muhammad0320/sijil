@@ -179,3 +179,34 @@ func (w *WAL) readSegment(path string) ([]database.LogEntry, error) {
 	}
 	return logs, nil
 }
+
+// Close gracefully shuts down the WAL
+func (w *WAL) Close() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.activeFile != nil {
+		return w.activeFile.Close()
+	}
+	return nil
+}
+
+func (w *WAL) CleanupOldSegments() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	entries, err := os.ReadDir(w.dir)
+	if err != nil {
+		return err
+	}
+
+	for _, e := range entries {
+		var seq int
+		fmt.Sscanf(e.Name(), "segment-%d.log", &seq)
+
+		if seq < w.activeSeq {
+			path := filepath.Join(w.dir, e.Name())
+			os.Remove(path)
+		}
+	}
+	return nil
+}
