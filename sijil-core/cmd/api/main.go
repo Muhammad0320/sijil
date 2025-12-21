@@ -36,7 +36,7 @@ func main() {
 		log.Fatal("FATAL: DB_PASSWORD environment variable is not set ")
 	}
 
-	connString := fmt.Sprintf("postgres://postgres:%s@127.0.0.1:5434/log_db?sslmode=disable", dbPassword)
+	connString := fmt.Sprintf("postgres://postgres:%s@localhost:5433/log_db?sslmode=disable", dbPassword)
 
 	db, err := database.ConnectDB(ctx, connString)
 	if err != nil {
@@ -104,7 +104,7 @@ func main() {
 			log.Fatalf("⚠️ Failed to save recovered logs: %v", err)
 		}
 
-		fmt.Println("Recover successful. clearing WAL.")
+		fmt.Println("Recover successful. clearing WAL...")
 
 		if err := wal.Clear(); err != nil {
 			log.Fatalf("Fatal: Failed to clear WAL: %v", err)
@@ -117,6 +117,8 @@ func main() {
 	}
 
 	// -- End Recovery
+
+	identityRepo := identity
 
 	// -- Ingesting engine
 	engine := ingest.NewIngestionEngine(db, wal, h)
