@@ -11,6 +11,7 @@ import (
 	"sijil-core/internals/auth"
 	"sijil-core/internals/database"
 	"sijil-core/internals/hub"
+	"sijil-core/internals/identity"
 	"sijil-core/internals/ingest"
 	"testing"
 
@@ -45,6 +46,12 @@ func setupTestServer(t *testing.T) *Server {
 	h := hub.NewHub()
 	go h.Run()
 
+	jwtSecret := "test-secret-key"
+
+	idRepo := identity.NewRepository(db)
+	idService := identity.NewService(idRepo, jwtSecret)
+	idHandler := identity.NewHandler(idService)
+
 	// We don't need a real WAL for RBAC testing, but the engine needs one
 	// Create a temp file
 	tmpWal, _ := os.CreateTemp("", "test_wal")
@@ -52,9 +59,7 @@ func setupTestServer(t *testing.T) *Server {
 	engine := ingest.NewIngestionEngine(db, wal, h)
 	authCache := auth.NewAuthCache(db)
 
-	jwtSecret := "test-secret-key"
-
-	return NewServer(db, engine, h, authCache, jwtSecret)
+	return NewServer(db, engine, h, authCache, jwtSecret, idHandler)
 }
 
 // Helper to make requests

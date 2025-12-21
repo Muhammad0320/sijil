@@ -11,6 +11,7 @@ import (
 	"sijil-core/internals/auth"
 	"sijil-core/internals/database"
 	"sijil-core/internals/hub"
+	"sijil-core/internals/identity"
 	"sijil-core/internals/ingest"
 	"sijil-core/internals/server"
 	"syscall"
@@ -117,18 +118,19 @@ func main() {
 	}
 
 	// -- End Recovery
-
-	identityRepo := identity
-
-	// -- Ingesting engine
-	engine := ingest.NewIngestionEngine(db, wal, h)
-	engine.Start(ctx)
-
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("FATAL: JWT_SECRET environment variable is not set")
 	}
-	srv := server.NewServer(db, engine, h, authCache, jwtSecret)
+
+	identityRepo := identity.NewRepository(db)
+	identityService := identity.NewService(identityRepo, jwtSecret)
+	identityHandler := identity.NewHandler(identityService)
+
+	// -- Ingesting engine
+	engine := ingest.NewIngestionEngine(db, wal, h)
+	engine.Start(ctx)
+	srv := server.NewServer(db, engine, h, authCache, jwtSecret, identityHandler)
 
 	httpServer := &http.Server{
 		Addr:         ":8080",
