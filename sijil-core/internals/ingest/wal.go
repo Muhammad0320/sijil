@@ -241,3 +241,29 @@ func (w *WAL) CleanupSafeSegments(retainCount int) error {
 	}
 	return nil
 }
+
+func (w *WAL) Reset() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	// 1. Close active file if open
+	if w.activeFile != nil {
+		w.activeFile.Close()
+		w.activeFile = nil
+	}
+
+	// 2. Delete all segment files
+	entries, err := os.ReadDir(w.dir)
+	if err != nil {
+		return err
+	}
+
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), "segment-") {
+			os.Remove(filepath.Join(w.dir, e.Name()))
+		}
+	}
+
+	// 3. Start fresh at segment 1
+	return w.openSegment(1)
+}
