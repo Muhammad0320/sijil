@@ -92,13 +92,14 @@ func main() {
 				log.Message,
 				log.Service,
 				log.ProjectID,
+				log.Data,
 			}
 		}
 
 		_, err := db.CopyFrom(
 			recoverCtx,
 			pgx.Identifier{"logs"},
-			[]string{"timestamp", "level", "message", "service", "project_id"},
+			[]string{"timestamp", "level", "message", "service", "project_id", "data"},
 			pgx.CopyFromRows(rows),
 		)
 		if err != nil {
@@ -107,17 +108,17 @@ func main() {
 
 		fmt.Println("Recover successful. clearing WAL...")
 
-		if err := wal.Clear(); err != nil {
+		if err := wal.Reset(); err != nil {
 			log.Fatalf("Fatal: Failed to clear WAL: %v", err)
 		}
 
-		fmt.Println("✅ Recover complete. Wal Cleared")
+		fmt.Println("✅ Recover complete. Wal reset to segment 1")
 	} else {
-		wal.Clear()
+		wal.Reset()
 		fmt.Println("✅ Wal is empty. Clean startup.")
 	}
-
 	// -- End Recovery
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("FATAL: JWT_SECRET environment variable is not set")
