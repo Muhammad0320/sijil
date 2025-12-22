@@ -48,8 +48,13 @@ func setupTestServer(t *testing.T) *Server {
 
 	jwtSecret := "test-secret-key"
 
+	mailer := func(email, subject, body string) error {
+		fmt.Printf("[Real mock] To %s | Token %s\n", email, body)
+		return nil
+	}
+
 	idRepo := identity.NewRepository(db)
-	idService := identity.NewService(idRepo, jwtSecret)
+	idService := identity.NewService(idRepo, jwtSecret, mailer)
 	idHandler := identity.NewHandler(idService)
 
 	// We don't need a real WAL for RBAC testing, but the engine needs one
