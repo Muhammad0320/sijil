@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"sijil-core/internals/auth"
-	"sijil-core/internals/database" // Need this for Plan Limits struct
+	"sijil-core/internals/database"
 	"sijil-core/internals/utils"
 )
 
@@ -22,7 +22,7 @@ func NewService(repo Repository) *Service {
 type CreateProjectResponse struct {
 	ID        int    `json:"id"`
 	APIKey    string `json:"api_key"`
-	APISecret string `json:"api_secret"` // Returned ONCE
+	APISecret string `json:"api_secret"`
 }
 
 func (s *Service) CreateProject(ctx context.Context, userID int, req CreateProjectRequest) (*CreateProjectResponse, error) {
@@ -42,7 +42,7 @@ func (s *Service) CreateProject(ctx context.Context, userID int, req CreateProje
 	randKey, _ := utils.GenerateRandomString(16)
 	apiKey := "pk_live_" + randKey
 
-	randSecret, _ := utils.GenerateRandomString(32) // Longer for secret
+	randSecret, _ := utils.GenerateRandomString(32)
 	apiSecret := "sk_live_" + randSecret
 	secretHash, _ := auth.HashPasswod(apiSecret)
 
@@ -80,10 +80,6 @@ func (s *Service) AddMember(ctx context.Context, userID int, projectID int, req 
 		return ErrForbidden
 	}
 
-	// 2. Check Member Limits
-	// We need the OWNER's plan to check member limits, not the inviter's plan.
-	// But getting the owner ID is an extra query.
-	// FAST PATH: Get project owner ID first.
 	project, err := s.repo.GetByID(ctx, projectID)
 	if err != nil {
 		return err
@@ -102,7 +98,7 @@ func (s *Service) AddMember(ctx context.Context, userID int, projectID int, req 
 }
 
 func (s *Service) GetMembers(ctx context.Context, userID, projectID int) ([]ProjectMember, error) {
-	// 1. Check Access (Any member can view)
+
 	role, err := s.repo.GetRole(ctx, projectID, userID)
 	if err != nil {
 		return nil, err
