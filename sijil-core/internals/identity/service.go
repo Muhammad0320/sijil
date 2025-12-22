@@ -23,8 +23,6 @@ func NewService(repo Repository, jwtSecret string, mailer EmailSender) *Service 
 
 func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, error) {
 
-	fmt.Println("Do I reach here?? ---------------")
-
 	hash, _ := auth.HashPasswod(req.Password)
 
 	rawToken, _ := utils.GenerateRandomString(32)

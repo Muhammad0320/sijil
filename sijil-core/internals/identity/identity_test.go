@@ -71,14 +71,9 @@ func TestIdentityFlow(t *testing.T) {
 	t.Log("STEP 1: Registering...")
 	regBody := `{"firstname":"Ali","lastname":"Test","email":"test@sijil.dev","password":"password123"}`
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/auth/register", bytes.NewBufferString(regBody))
-	if err != nil {
-		fmt.Printf("Shit just happend -------------- : %s", err)
-		return
-	}
+	req, _ := http.NewRequest("POST", "/auth/register", bytes.NewBufferString(regBody))
 
 	r.ServeHTTP(w, req)
-	fmt.Println(w.Body.String(), "-------------------------")
 	assert.Equal(t, 201, w.Code)
 
 	// B. VERIFY (Using captured token!)
