@@ -2,10 +2,12 @@ package shared
 
 import (
 	"sijil-core/internals/identity"
+	"sijil-core/internals/observability"
 	"sijil-core/internals/projects"
 )
 
 type Handlers struct {
-	Identity *identity.Handler
-	Projects *projects.Handler
+	Identity      *identity.Handler
+	Projects      *projects.Handler
+	Observability *observability.Handler
 }

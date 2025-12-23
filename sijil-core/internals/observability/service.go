@@ -74,7 +74,7 @@ func (s *Service) Search(ctx context.Context, userID, projectID int, query strin
 	to := time.Now()
 	from := to.Add(-24 * time.Hour)
 
-	// A 	HUGEEEEEEEEEEEEEEEEE   TRASH
+	// A HUGEEEEEEEEEEEEEEEEE   TRASH
 	return s.repo.SearchLogs(ctx, projectID, limit, offset, query, from, to, 10)
 }
 
