@@ -10,9 +10,9 @@ import (
 )
 
 type Repository interface {
-	SearchLogs(ctx context.Context, projectID, limit, offset int, query string, from, to time.Time) ([]LogEntry, error)
+	SearchLogs(ctx context.Context, projectID, limit, offset int, query string, from, to time.Time, retentionDays int) ([]LogEntry, error)
 	GetStats(ctx context.Context, projectID int, from, to time.Time, bucket string) ([]LogStat, error)
-	GetSummary(ctx context.Context, projectID int, from, to time.Time) (*LogSummary, error)
+	GetSummary(ctx context.Context, projectID int, from, to time.Time) (LogSummary, error)
 }
 
 type postgresRepository struct {
