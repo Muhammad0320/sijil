@@ -60,7 +60,7 @@ func setupTestServer(t *testing.T) *Server {
 	idHandler := identity.NewHandler(idService)
 
 	projectsRepo := projects.NewRepository(db)
-	projectService := projects.NewService(projectsRepo)
+	projectService := projects.NewService(projectsRepo, mailer)
 	projectHandler := projects.NewHandler(projectService)
 
 	handlers := shared.Handlers{

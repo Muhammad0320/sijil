@@ -15,6 +15,7 @@ import (
 	"sijil-core/internals/ingest"
 	"sijil-core/internals/projects"
 	"sijil-core/internals/server"
+	"sijil-core/internals/shared"
 	"syscall"
 	"time"
 
@@ -135,13 +136,18 @@ func main() {
 	identityHandler := identity.NewHandler(identityService)
 
 	projectsRepo := projects.NewRepository(db)
-	projectService := projects.NewService(projectsRepo)
+	projectService := projects.NewService(projectsRepo, mailer)
 	projectHandler := projects.NewHandler(projectService)
+
+	handlers := shared.Handlers{
+		Identity: identityHandler,
+		Projects: projectHandler,
+	}
 
 	// -- Ingesting engine
 	engine := ingest.NewIngestionEngine(db, wal, h)
 	engine.Start(ctx)
-	srv := server.NewServer(db, engine, h, authCache, jwtSecret, identityHandler, projectHandler)
+	srv := server.NewServer(db, engine, h, authCache, jwtSecret, handlers)
 
 	httpServer := &http.Server{
 		Addr:         ":8080",
