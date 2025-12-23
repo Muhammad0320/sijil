@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/time/rate"
 )
@@ -74,8 +73,6 @@ func ParseTime(c *gin.Context) (time.Time, time.Time) {
 
 	return fromTime, toTime
 }
-
-var validate = validator.New()
 
 func (s *Server) registerRoutes(router *gin.Engine) {
 	router.Use(s.SecurityHeadersMiddleware())
