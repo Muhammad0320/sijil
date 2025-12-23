@@ -31,6 +31,10 @@ func (s *Server) DogFoodMiddleware() gin.HandlerFunc {
 
 		c.Next()
 
+		if s.ingestEngine == nil {
+			return
+		}
+
 		if internalPID == 0 {
 			return
 		}
@@ -65,6 +69,10 @@ func (s *Server) DogFoodMiddleware() gin.HandlerFunc {
 		}
 
 		go func(entry database.LogEntry) {
+
+			if s.ingestEngine == nil {
+				return
+			}
 
 			if err := s.ingestEngine.Wal.WriteBatch([]database.LogEntry{entry}); err != nil {
 				fmt.Printf("DogFood wal error: %v\n", err)
