@@ -14,6 +14,7 @@ import (
 	"sijil-core/internals/identity"
 	"sijil-core/internals/ingest"
 	"sijil-core/internals/projects"
+	"sijil-core/internals/shared"
 	"testing"
 
 	"github.com/joho/godotenv"
@@ -62,6 +63,11 @@ func setupTestServer(t *testing.T) *Server {
 	projectService := projects.NewService(projectsRepo)
 	projectHandler := projects.NewHandler(projectService)
 
+	handlers := shared.Handlers{
+		Identity: idHandler,
+		Projects: projectHandler,
+	}
+
 	// We don't need a real WAL for RBAC testing, but the engine needs one
 	// Create a temp file
 	tmpWal, _ := os.CreateTemp("", "test_wal")
@@ -69,7 +75,7 @@ func setupTestServer(t *testing.T) *Server {
 	engine := ingest.NewIngestionEngine(db, wal, h)
 	authCache := auth.NewAuthCache(db)
 
-	return NewServer(db, engine, h, authCache, jwtSecret, idHandler, projectHandler)
+	return NewServer(db, engine, h, authCache, jwtSecret, handlers)
 }
 
 // Helper to make requests
