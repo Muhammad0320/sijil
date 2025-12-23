@@ -81,6 +81,7 @@ func TestProjectFlow(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/v1/auth/register", bytes.NewBufferString(regBody))
 	srv.Router.ServeHTTP(w, req)
+	fmt.Println(w.Body.String(), "------------------------")
 	assert.Equal(t, 201, w.Code)
 
 	ownerToken := parseToken(w.Body)
