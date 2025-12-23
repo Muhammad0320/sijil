@@ -79,7 +79,10 @@ var validate = validator.New()
 
 func (s *Server) registerRoutes(router *gin.Engine) {
 	router.Use(s.SecurityHeadersMiddleware())
-	router.Use(s.DogFoodMiddleware())
+
+	if s.ingestEngine != nil {
+		router.Use(s.DogFoodMiddleware())
+	}
 
 	apiv1 := router.Group("/api/v1")
 
