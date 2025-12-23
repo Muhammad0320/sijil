@@ -69,42 +69,65 @@ func (s *Service) CreateProject(ctx context.Context, userID int, req CreateProje
 func (s *Service) ListProjects(ctx context.Context, userID int) ([]Project, error) {
 	return s.repo.ListByUserID(ctx, userID)
 }
-
 func (s *Service) AddMember(ctx context.Context, userID int, projectID int, req AddMemberRequest) error {
-	// 1. Check Permission (Must be Owner or Admin)
-	role, err := s.repo.GetRole(ctx, projectID, userID)
-	if err != nil {
-		return err
-	}
-	if role != "owner" && role != "admin" {
-		return ErrForbidden
-	}
-
+	// 1. Fetch Project to identify the REAL owner
 	project, err := s.repo.GetByID(ctx, projectID)
 	if err != nil {
-		return err
+		return err // Project not found
 	}
 
+	// 2. Check Permissions (The "Business" Logic)
+	isOwner := project.UserID == userID
+
+	// If not owner, check if they are an admin
+	isAuth := isOwner
+	if !isAuth {
+		role, err := s.repo.GetRole(ctx, projectID, userID)
+		if err == nil && role == "admin" {
+			isAuth = true
+		}
+	}
+
+	if !isAuth {
+		return ErrForbidden // "You are not the Owner or an Admin"
+	}
+
+	// 3. Check Limits (Owner's Plan counts, not the Admin's)
+	// We check the plan of the Project Owner (project.UserID)
 	plan, _ := s.repo.GetUserPlan(ctx, project.UserID)
-	count, _ := s.repo.CountMembers(ctx, projectID)
+	currentMembers, _ := s.repo.CountMembers(ctx, projectID)
 	limits := database.GetPlanLimits(plan)
 
-	if count >= limits.MaxMemebers {
+	if currentMembers >= limits.MaxMemebers {
 		return ErrLimitReached
 	}
 
-	// 3. Add
+	// 4. Send Email (Stub for later)
+	// go s.mailer.SendInvite(...)
+
 	return s.repo.AddMember(ctx, projectID, req.Email, req.Role)
 }
 
 func (s *Service) GetMembers(ctx context.Context, userID, projectID int) ([]ProjectMember, error) {
-
-	role, err := s.repo.GetRole(ctx, projectID, userID)
+	// 1. Fetch Project
+	project, err := s.repo.GetByID(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	if role == "" {
-		return nil, ErrForbidden
+
+	// 2. Check Permissions (Owner OR Admin ONLY)
+	isOwner := project.UserID == userID
+	isAdmin := false
+
+	if !isOwner {
+		role, err := s.repo.GetRole(ctx, projectID, userID)
+		if err == nil && role == "admin" {
+			isAdmin = true
+		}
+	}
+
+	if !isOwner && !isAdmin {
+		return nil, ErrForbidden // Viewers get blocked here.
 	}
 
 	return s.repo.ListMembers(ctx, projectID)
