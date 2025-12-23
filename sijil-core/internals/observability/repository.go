@@ -120,7 +120,38 @@ func (r *postgresRepository) GetStats(ctx context.Context, projectID int, from, 
 
 }
 
-func (r *postgresRepository) GetSummary(ctx context.Context, projectID int, from, to time.Time) (*LogSummary, error) {
+func (r *postgresRepository) GetSummary(ctx context.Context, projectID int, from, to time.Time) (LogSummary, error) {
 
-	return nil, nil
+	var summary LogSummary
+
+	query := `
+		WITH subset AS (
+		SELECT level, service
+		FROM logs
+		WHERE project_id = $1
+		  AND timestamp >= $2
+		  AND timestamp <= $3
+	) 
+	SELECT 
+		COUNT(*) as total,
+		COUNT(*) FILTER (WHERE level ILIKE 'error' OR level ILIKE 'critical') as errors,
+		COUNT(DISTICT service) as services
+	FROM subset;
+	`
+
+	err := r.db.QueryRow(ctx, query, projectID, from, to).Scan(
+		&summary.TotalLogs, &summary.ErrorCount, &summary.ServiceCount,
+	)
+
+	if err != nil {
+		return summary, err
+	}
+
+	if summary.TotalLogs > 0 {
+		summary.ErrorRate = (float64(summary.ErrorCount) / float64(summary.TotalLogs)) * 100
+	} else {
+		summary.ErrorRate = 0
+	}
+
+	return summary, nil
 }
