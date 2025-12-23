@@ -79,14 +79,48 @@ func (r *postgresRepository) SearchLogs(ctx context.Context, projectID, limit, o
 
 }
 
-// Implement GetStats and GetSummary using the SQL logic you already wrote in db.go
-// (I will omit them for brevity, but you just copy-paste them here and adapt the signature)
 func (r *postgresRepository) GetStats(ctx context.Context, projectID int, from, to time.Time, bucket string) ([]LogStat, error) {
-	// ... Copy from old db.go ...
-	return nil, nil // placeholder
+
+	validBuckets := map[string]bool{
+		"1 minutes": true, "5 minutes": true, "15 minutes": true, "30 minutes": true,
+		"1 hour": true, "6 hours": true, "12 hours": true, "1 day": true,
+	}
+
+	if !validBuckets[bucket] {
+		return nil, fmt.Errorf("Invalid bucket interval: %s\n", bucket)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT time_bucket('%s', timestamp) AS bucket, COUNT(*)
+		FROM logs 
+		WHERE project_id = $1
+		  AND  timestamp >= $2
+		  AND  timestamp <= $3
+		GROUP BY bucket
+		ORDER BY bucket ASC;
+	`, bucket)
+	rows, err := r.db.Query(ctx, query, projectID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var stats []LogStat
+	for rows.Next() {
+		var s LogStat
+
+		if err := rows.Scan(&s.Bucket, &s.Count); err != nil {
+			return nil, err
+		}
+
+		stats = append(stats, s)
+	}
+
+	return stats, nil
+
 }
 
 func (r *postgresRepository) GetSummary(ctx context.Context, projectID int, from, to time.Time) (*LogSummary, error) {
-	// ... Copy from old db.go ...
-	return nil, nil // placeholder
+
+	return nil, nil
 }
