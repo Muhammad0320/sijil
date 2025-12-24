@@ -3,9 +3,9 @@ package observability
 import (
 	"context"
 	"errors"
+	"sijil-core/internals/core/projects"
 	"sijil-core/internals/database"
 	"sijil-core/internals/ingest"
-	"sijil-core/internals/projects"
 	"time"
 )
 

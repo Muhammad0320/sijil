@@ -10,8 +10,8 @@ import (
 	"os"
 	"testing"
 
-	"sijil-core/internals/identity"
-	"sijil-core/internals/projects"
+	"sijil-core/internals/core/identity"
+	"sijil-core/internals/core/projects"
 	"sijil-core/internals/server"
 	"sijil-core/internals/shared"
 

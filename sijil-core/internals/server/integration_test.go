@@ -9,11 +9,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"sijil-core/internals/auth"
+	"sijil-core/internals/core/identity"
+	"sijil-core/internals/core/projects"
 	"sijil-core/internals/database"
 	"sijil-core/internals/hub"
-	"sijil-core/internals/identity"
 	"sijil-core/internals/ingest"
-	"sijil-core/internals/projects"
 	"sijil-core/internals/shared"
 	"testing"
 

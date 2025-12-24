@@ -1,9 +1,9 @@
 package shared
 
 import (
-	"sijil-core/internals/identity"
-	"sijil-core/internals/observability"
-	"sijil-core/internals/projects"
+	"sijil-core/internals/core/identity"
+	"sijil-core/internals/core/observability"
+	"sijil-core/internals/core/projects"
 )
 
 type Handlers struct {

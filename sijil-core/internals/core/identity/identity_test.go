@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"sijil-core/internals/identity"
+	"sijil-core/internals/core/identity"
 	"testing"
 
 	"github.com/gin-gonic/gin"

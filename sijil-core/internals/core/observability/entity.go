@@ -25,11 +25,3 @@ type LogSummary struct {
 
 // IngestRequest allows single or batch ingestion
 type IngestRequest []LogEntry
-
-type Plan struct {
-	Name          string
-	MaxDailyLogs  int
-	RetentionDays int
-	MaxMemebers   int
-	MaxProjects   int
-}
