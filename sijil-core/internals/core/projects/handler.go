@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sijil-core/internals/core/domain"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +26,15 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.service.CreateProject(c.Request.Context(), userID, req)
+	planRaw, exists := c.Get("plan")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "plan not found in context"})
+		return
+	}
+
+	plan := planRaw.(*domain.Plan)
+
+	resp, err := h.service.CreateProject(c.Request.Context(), userID, req, plan)
 	if err != nil {
 		if errors.Is(err, ErrLimitReached) {
 			c.JSON(http.StatusPaymentRequired, gin.H{"error": err.Error()})
