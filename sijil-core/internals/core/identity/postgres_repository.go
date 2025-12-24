@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sijil-core/internals/core/domain"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -18,14 +19,14 @@ func NewRepository(db *pgxpool.Pool) Repository {
 	return &postgresRepository{db: db}
 }
 
-func (r *postgresRepository) GetPlanByUserID(ctx context.Context, id int) (*Plan, error) {
+func (r *postgresRepository) GetPlanByUserID(ctx context.Context, id int) (*domain.Plan, error) {
 
 	user, err := r.GetByID(ctx, id)
 	if err != nil {
-		return &Plan{}, fmt.Errorf("faild to get plan %s", err)
+		return &domain.Plan{}, fmt.Errorf("faild to get plan %s", err)
 	}
 
-	var p Plan
+	var p domain.Plan
 	err = r.db.QueryRow(ctx, `
 		SELECT id, name, max_projects, max_members, max_daily_logs, retention_days
  	FROM plans 
@@ -33,7 +34,7 @@ func (r *postgresRepository) GetPlanByUserID(ctx context.Context, id int) (*Plan
 	`, user.PlanID).Scan(&p.ID, &p.Name, &p.MaxProjects, &p.MaxMemebers, &p.MaxDailyLogs, &p.RetentionDays)
 
 	if err != nil {
-		return &Plan{}, fmt.Errorf("faild to get plan %s", err)
+		return &domain.Plan{}, fmt.Errorf("faild to get plan %s", err)
 	}
 
 	return &p, nil
