@@ -29,3 +29,11 @@ type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
+
+type Plan struct {
+	Name          string
+	MaxDailyLogs  int
+	RetentionDays int
+	MaxMemebers   int
+	MaxProjects   int
+}

@@ -18,6 +18,11 @@ func NewRepository(db *pgxpool.Pool) Repository {
 	return &postgresRepository{db: db}
 }
 
+func (r *postgresRepository) GetPlanByUserID(ctx context.Context, id int) (*Plan, error) {
+
+	return &Plan{}, nil
+}
+
 func (r *postgresRepository) Create(ctx context.Context, u *User) (int, error) {
 	var newUserID int
 	err := r.db.QueryRow(ctx,

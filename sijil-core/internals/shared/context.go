@@ -7,8 +7,10 @@ import (
 
 type Plan struct {
 	Name          string
-	MaxDailyLogs  string
-	RetentionDays string
+	MaxDailyLogs  int
+	RetentionDays int
+	MaxMemebers   int
+	MaxProjects   int
 }
 
 type UserContextKey string
