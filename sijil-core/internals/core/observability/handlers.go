@@ -1,6 +1,7 @@
 package observability
 
 import (
+	"encoding/json"
 	"net/http"
 	"sijil-core/internals/core/domain"
 	"strconv"
@@ -20,15 +21,32 @@ func NewHandler(s *Service) *Handler {
 func (h *Handler) Ingest(c *gin.Context) {
 	projectID := c.GetInt("projectID")
 
-	var logs []LogEntry
-	if err := c.ShouldBindJSON(&logs); err != nil {
-		c.JSON(400, gin.H{"error": "bad log"})
+	decoder := json.NewDecoder(c.Request.Body)
+
+	token, err := decoder.Token()
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid json"})
 		return
 	}
 
-	if err := h.service.Ingest(c.Request.Context(), projectID, logs); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "ingestion failed"})
-		return
+	// If it's an array '[', we loop until we hit ']'
+	if delim, ok := token.(json.Delim); ok && delim == '[' {
+		for decoder.More() {
+
+			var log LogEntry
+
+			if err := decoder.Decode(&log); err != nil {
+				c.JSON(400, gin.H{"error": "bad log entry"})
+				return
+			}
+
+			h.service.ProcessAndQueue(c.Request.Context(), projectID, &log)
+		}
+
+		// Consuming the closing ']'
+		decoder.Token()
+	} else {
+		// Handle case when user sends a single JSON object '{...}'
 	}
 
 	c.JSON(http.StatusAccepted, gin.H{"message": "accepted"})

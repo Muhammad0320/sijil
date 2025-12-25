@@ -28,39 +28,19 @@ func NewService(repo Repository, projectRepo projects.Repository, engine *ingest
 }
 
 // Ingest: The write path
-func (s *Service) Ingest(ctx context.Context, projectID int, logs []LogEntry) error {
-	// 1. Enrich & Validate
-	for i := range logs {
-		logs[i].ProjectID = projectID
-		if logs[i].Timestamp.IsZero() {
-			logs[i].Timestamp = time.Now()
-		}
-		// Clamp huge messages?
-		if len(logs[i].Message) > 10000 {
-			logs[i].Message = logs[i].Message[:10000] + "...(truncated)"
-		}
+func (s *Service) ProcessAndQueue(ctx context.Context, projectID int, log *LogEntry) {
+
+	log.ProjectID = projectID
+	if log.Timestamp.IsZero() {
+		log.Timestamp = time.Now()
 	}
 
-	// 2. Durability (WAL)
-
-	var dbLogs []database.LogEntry
-	for _, l := range logs {
-		dbLogs = append(dbLogs, database.LogEntry(l))
+	if len(log.Message) > 1000 {
+		log.Message = log.Message[:10000] + "..."
 	}
 
-	// if err := s.engine.Wal.WriteBatch(dbLogs); err != nil {
-	// 	ingest.RecordError()
-	// 	ingest.RecordDropped(1)
-	// 	return errors.New("durability failure")
-	// }
-
-	// 3. Processing (Queue)
-	for _, l := range dbLogs {
-		s.engine.LogQueue <- l
-		ingest.RecordQueued(1)
-	}
-
-	return nil
+	s.engine.LogQueue <- database.LogEntry(*log)
+	ingest.RecordQueued(1)
 }
 
 // Search: The read path
