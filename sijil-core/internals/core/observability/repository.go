@@ -35,19 +35,22 @@ func (r *postgresRepository) SearchLogs(ctx context.Context, projectID, limit, o
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	args := make([]any, 0)
-	argsCounter := 1
+	baseQuery := `
+		SELECT timestamp, level, service, message, data
+		FROM logs
+		WHERE project_id = $1
+	`
+
+	args := []interface{}{projectID}
+	argsCounter := 2
 
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(fmt.Sprintf(`SELECT timestamp, level, message, service, data
-		FROM logs WHERE project_id = $%d`, argsCounter))
-	args = append(args, projectID)
-	argsCounter++
+	queryBuilder.WriteString(baseQuery)
 
 	// Conditionally add the WHERE clause for search
 	if searchQuery != "" {
 		// This is the FTS part
-		queryBuilder.WriteString(fmt.Sprintf(" WHERE search_vector @@ plainto_tsquery('simple', $%d)", argsCounter))
+		queryBuilder.WriteString(fmt.Sprintf(" AND search_vector @@ plainto_tsquery('simple', $%d)", argsCounter))
 		args = append(args, searchQuery)
 		argsCounter++
 	}
