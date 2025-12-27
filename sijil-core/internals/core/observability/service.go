@@ -28,18 +28,25 @@ func NewService(repo Repository, projectRepo projects.Repository, engine *ingest
 }
 
 // Ingest: The write path
-func (s *Service) ProcessAndQueue(ctx context.Context, projectID int, log *LogEntry) {
+func (s *Service) ProcessAndQueue(ctx context.Context, projectID int, logs []LogEntry) {
 
-	log.ProjectID = projectID
-	if log.Timestamp.IsZero() {
-		log.Timestamp = time.Now()
+	dbLogs := make([]database.LogEntry, len(logs))
+
+	for i, l := range logs {
+
+		l.ProjectID = projectID
+		if l.Timestamp.IsZero() {
+			l.Timestamp = time.Now()
+		}
+
+		if len(l.Message) > 1000 {
+			l.Message = l.Message[:10000] + "..."
+		}
+
+		dbLogs[i] = database.LogEntry(l)
 	}
 
-	if len(log.Message) > 1000 {
-		log.Message = log.Message[:10000] + "..."
-	}
-
-	s.engine.LogQueue <- database.LogEntry(*log)
+	s.engine.LogQueue <- dbLogs
 
 	ingest.RecordQueued(1)
 }
