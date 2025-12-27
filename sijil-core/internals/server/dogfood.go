@@ -79,7 +79,7 @@ func (s *Server) DogFoodMiddleware() gin.HandlerFunc {
 				return
 			}
 
-			s.ingestEngine.LogQueue <- entry
+			s.ingestEngine.LogQueue <- []database.LogEntry{entry}
 
 		}(logEntry)
 
