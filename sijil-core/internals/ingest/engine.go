@@ -5,6 +5,8 @@ import (
 	"expvar"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"sijil-core/internals/database"
 	"sijil-core/internals/hub"
 	"sync"
@@ -183,4 +185,27 @@ func (e *IngestionEngine) walJanitor(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (e *IngestionEngine) CheckDiskPressure() error {
+
+	var size int64
+	err := filepath.Walk(e.Wal.dir, func(_ string, info os.FileInfo, err error) error {
+
+		if !info.IsDir() {
+			size += info.Size()
+		}
+
+		return err
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if size > 2*1024*1024*1024 {
+		return fmt.Errorf("disk pressure: WAL size %.2f MB exceeds limit", float64(size)/1024/1024)
+	}
+
+	return nil
 }

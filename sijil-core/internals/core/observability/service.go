@@ -46,6 +46,7 @@ func (s *Service) ProcessAndQueue(ctx context.Context, projectID int, logs []Log
 		dbLogs[i] = database.LogEntry(l)
 	}
 
+	s.engine.CheckDiskPressure()
 	s.engine.LogQueue <- dbLogs
 
 	ingest.RecordQueued(1)
