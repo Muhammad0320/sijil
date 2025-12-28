@@ -120,6 +120,8 @@ func (w *WAL) WriteBatch(batch []database.LogEntry) error {
 			return err
 		}
 
+		entry.SegmentID = w.activeSeq
+
 		w.currentSize += int64(4 + len(data))
 	}
 
@@ -223,8 +225,6 @@ func (w *WAL) Close() error {
 	}
 	return nil
 }
-
-// wal.go
 
 func (w *WAL) CleanupSafeSegments(retainCount int) error {
 	w.mu.Lock()

@@ -9,6 +9,7 @@ type LogEntry struct {
 	Service   string                 `json:"service"`
 	ProjectID int                    `json:"project_id"`
 	Data      map[string]interface{} `json:"data,omitempty"`
+	SegmentID int                    `json:"-,omitempty"`
 }
 
 type LogStat struct {

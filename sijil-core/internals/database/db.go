@@ -22,6 +22,7 @@ type LogEntry struct {
 	Service   string                 `json:"service"`
 	ProjectID int                    `json:"-"`
 	Data      map[string]interface{} `json:"data,omitempty"`
+	SegmentID int                    `json:"-,omitempty"`
 }
 
 func (l *LogEntry) Serialize() ([]byte, error) {
