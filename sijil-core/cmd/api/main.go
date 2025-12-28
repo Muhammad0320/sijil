@@ -75,13 +75,27 @@ func main() {
 	defer wal.Close()
 
 	// --- Recovery Logic
-	fmt.Println("Checking was for unsaved logs")
 	recoveredLogs, err := wal.Recover()
 	if err != nil {
 		log.Fatalf("Fatal: WAL recovery failed: %v", err)
 	}
 
-	if len(recoveredLogs) > 0 {
+	var lastDbTime time.Time
+	err = db.QueryRow(context.Background(), "SELECT COALESCE(MAX(timestamp), '1970-01-01') FROM logs").Scan(&lastDbTime)
+	if err != nil {
+		log.Fatalf("Failed to check DB state: %v", err)
+	}
+
+	fmt.Printf("🔍 DB State: Latest log is from %v\n", lastDbTime)
+
+	var newLogs []database.LogEntry
+	for _, l := range recoveredLogs {
+		if l.Timestamp.After(lastDbTime) {
+			newLogs = append(newLogs, l)
+		}
+	}
+
+	if len(newLogs) > 0 {
 		fmt.Printf("⚠️ Found %d unsaved logs in WAL. Replaying... \n", len(recoveredLogs))
 
 		// We use a temporary context for recovery
@@ -111,15 +125,12 @@ func main() {
 
 		fmt.Println("Recover successful. clearing WAL...")
 
-		if err := wal.Reset(); err != nil {
-			log.Fatalf("Fatal: Failed to clear WAL: %v", err)
-		}
-
 		fmt.Println("✅ Recover complete. Wal reset to segment 1")
 	} else {
-		wal.Reset()
 		fmt.Println("✅ Wal is empty. Clean startup.")
 	}
+	// Now it's sake to NUKE the files
+	wal.Reset()
 	// -- End Recovery
 
 	jwtSecret := os.Getenv("JWT_SECRET")

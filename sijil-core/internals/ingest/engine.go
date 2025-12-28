@@ -167,15 +167,12 @@ func (e *IngestionEngine) flush(ctx context.Context, batch []database.LogEntry) 
 	RecordFlushed(len(batch))
 
 	// The Janitor Logic
-	fmt.Println("The Janitor logic is stating.....")
 	maxSeq := 0
 	for _, log := range batch {
 		if log.SegmentID > maxSeq {
 			maxSeq = log.SegmentID
 		}
 	}
-
-	fmt.Println(maxSeq, "---------------")
 
 	if maxSeq > 0 {
 
