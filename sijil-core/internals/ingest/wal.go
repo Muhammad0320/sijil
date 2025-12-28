@@ -113,8 +113,11 @@ func (w *WAL) WriteBatch(batch []database.LogEntry) error {
 		}
 	}
 
-	for _, entry := range batch {
-		data, err := entry.Serialize()
+	for i := range batch {
+
+		batch[i].SegmentID = w.activeSeq
+
+		data, err := batch[i].Serialize()
 		if err != nil {
 			continue
 		}
@@ -130,10 +133,6 @@ func (w *WAL) WriteBatch(batch []database.LogEntry) error {
 		if err != nil {
 			return err
 		}
-
-		fmt.Println("active seeqqqqqqqq", w.activeSeq)
-
-		entry.SegmentID = w.activeSeq
 
 		w.currentSize += int64(4 + len(data))
 	}
