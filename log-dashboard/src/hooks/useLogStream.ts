@@ -1,6 +1,6 @@
 import { LogEntry } from "@/lib/types";
 import { useToast } from "@/providers/ToastProvider";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 const LogSchema = z.object({
