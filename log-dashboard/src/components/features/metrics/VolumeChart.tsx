@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import styled from "styled-components";
 import {
   AreaChart,
   Area,
@@ -8,20 +9,18 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid,
 } from "recharts";
-import styled from "styled-components";
-import { fetchClient } from "@/lib/client";
+import { LogStat } from "@/actions/metrics";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const ChartContainer = styled.div`
+const Container = styled.div`
+  height: 250px; /* Increased height for better visibility */
   width: 100%;
-  height: 100%;
-  background: rgba(22, 27, 34, 0.5); /* Glass-like */
-  backdrop-filter: blur(10px);
+  background: rgba(13, 17, 23, 0.4);
   border: 1px solid #30363d;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 16px;
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
 `;
@@ -29,109 +28,79 @@ const ChartContainer = styled.div`
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 16px;
 `;
 
 const Title = styled.h3`
   font-size: 14px;
   color: #8b949e;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-weight: 600;
 `;
 
-const LiveBadge = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+const Badge = styled.span`
   font-size: 10px;
-  color: #2ecc71;
-  background: rgba(46, 204, 113, 0.1);
+  background: rgba(88, 166, 255, 0.15);
+  color: #58a6ff;
   padding: 2px 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(46, 204, 113, 0.2);
+  border-radius: 99px;
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 
   &::before {
     content: "";
     width: 6px;
     height: 6px;
+    background: #58a6ff;
     border-radius: 50%;
-    background: #2ecc71;
-    box-shadow: 0 0 8px #2ecc71;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+    100% {
+      opacity: 1;
+    }
   }
 `;
 
-interface StatPoint {
-  bucket: string;
-  count: number;
-}
-
 export default function VolumeChart({
-  projectId,
-  token,
+  data,
+  loading,
 }: {
-  projectId: number | null;
-  token: string;
+  data: LogStat[];
+  loading: boolean;
 }) {
-  const [data, setData] = useState<StatPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!projectId) return;
-
-    const loadData = async () => {
-      try {
-        // Fetch last 1 hour, bucketed by 1 minute
-        // Ideally, you'd use a library like swr or tanstack-query here for auto-refresh
-        const res = await fetchClient<{ stats: StatPoint[] }>(
-          `/logs/stats?project_id=${projectId}&bucket=1m`,
-          { method: "GET" },
-          token
-        );
-
-        // Transform for Recharts (parse dates if needed)
-        const formatted = res.stats.map((s) => ({
-          ...s,
-          // Format time to HH:MM for the axis
-          displayTime: new Date(s.bucket).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        }));
-
-        setData(formatted);
-      } catch (err) {
-        console.error("Failed to load charts", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-    // Poll every 30 seconds for "live" feel without websockets overkill
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
-  }, [projectId, token]);
-
   if (loading) {
     return (
-      <ChartContainer>
+      <Container>
         <Header>
-          <Title>Ingestion Volume</Title>
+          <Skeleton className="h-4 w-32 bg-[#30363d]" />
         </Header>
-        <Skeleton height="100%" width="100%" />
-      </ChartContainer>
+        <Skeleton className="h-full w-full bg-[#161b22] rounded-lg" />
+      </Container>
     );
   }
 
   return (
-    <ChartContainer>
+    <Container>
       <Header>
-        <Title>Ingestion Volume</Title>
-        <LiveBadge>LIVE 1H</LiveBadge>
+        <Title>Ingestion Volume (24h)</Title>
+        <Badge>LIVE</Badge>
       </Header>
 
-      <div style={{ flex: 1, minHeight: 0 }}>
+      {data.length === 0 ? (
+        <div className="flex h-full items-center justify-center text-[#8b949e] text-sm">
+          No data recorded
+        </div>
+      ) : (
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
@@ -140,32 +109,22 @@ export default function VolumeChart({
                 <stop offset="95%" stopColor="#58a6ff" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#30363d"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="displayTime"
-              stroke="#8b949e"
-              fontSize={10}
-              tickLine={false}
-              axisLine={false}
-              minTickGap={30}
-            />
-            <YAxis
-              stroke="#8b949e"
-              fontSize={10}
-              tickLine={false}
-              axisLine={false}
-            />
+            <XAxis dataKey="time" hide />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#161b22",
+                backgroundColor: "#0d1117",
                 borderColor: "#30363d",
+                color: "#c9d1d9",
                 fontSize: "12px",
+                borderRadius: "8px",
               }}
-              itemStyle={{ color: "#c9d1d9" }}
+              itemStyle={{ color: "#58a6ff" }}
+              labelFormatter={(label) =>
+                new Date(label).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              }
             />
             <Area
               type="monotone"
@@ -174,10 +133,11 @@ export default function VolumeChart({
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#colorCount)"
+              isAnimationActive={false} // Disable recharts animation for smooth live updates
             />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
-    </ChartContainer>
+      )}
+    </Container>
   );
 }
