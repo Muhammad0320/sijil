@@ -1,15 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import styled from "styled-components";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { LogStat } from "@/actions/metrics";
 import { Skeleton } from "@/components/ui/skeleton";
 
