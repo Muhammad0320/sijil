@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export interface Project {
   id: number;
   name: string;
@@ -11,6 +13,9 @@ export interface LogEntry {
   service: string;
   message: string;
   project_id: number;
+
+  // A flexible object payload
+  data?: Record<string, any>;
 }
 
 export function getErrorMessage(err: unknown): string {
