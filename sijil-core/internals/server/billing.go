@@ -38,7 +38,7 @@ func (s *Server) handlePayStackWebhook(c *gin.Context) {
 	hash := hmac.New(sha512.New, []byte(secret))
 	hash.Write(payload)
 	expectedSig := hex.EncodeToString(hash.Sum(nil))
-	incomingSig := c.GetHeader("x-paystack-signature")
+	incomingSig := c.GetHeader("X-Paystack-Signature")
 
 	if expectedSig != incomingSig {
 
