@@ -577,11 +577,21 @@ export default function MarketingPage() {
             ]}
           />
         </HeroTitle>
-
         <Subtitle>
-          A purpose-built observability platform. Written in Go.
+          Stop overpaying for Datadog. Sijil is the
+          <Highlight> high-performance</Highlight>, self-hostable log engine
+          built for startups and indie hackers.
           <br />
-          Backed by TimescaleDB. Powered by a crash-proof WAL.
+          <span
+            style={{
+              fontSize: "14px",
+              opacity: 0.8,
+              marginTop: "8px",
+              display: "block",
+            }}
+          >
+            Open Source • Single Binary • TimescaleDB Backed
+          </span>
         </Subtitle>
 
         <ButtonGroup>
