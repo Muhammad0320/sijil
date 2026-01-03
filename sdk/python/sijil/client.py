@@ -38,6 +38,7 @@ class SijilLogger:
     def warn(self, msg, data=None): self._push("warn", msg, data)
     def error(self, msg, data=None): self._push("error", msg, data)
     def debug(self, msg, data=None): self._push("debug", msg, data)
+    def critical(self, msg, data=None): self._push("critical", msg, data)
     
     def _push(self, level, msg, data):
         if self._stop_event.is_set():

@@ -13,7 +13,7 @@ interface Config {
 }
 
 interface LogEntry {
-  level: "info" | "error" | "warn" | "debug";
+  level: "info" | "error" | "warn" | "debug" | "critical";
   message: string;
   service?: string;
   timestamp: string; // ISO string
@@ -67,6 +67,10 @@ export class SijilLogger {
   }
   public error(message: string, data?: Object) {
     this.push("error", message, data);
+  }
+
+  public critical(message: string, data?: Object) {
+    this.push("critical", message, data);
   }
 
   private push(level: LogEntry["level"], message: string, data?: Object) {
