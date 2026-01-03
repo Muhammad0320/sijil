@@ -30,13 +30,14 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, *U
 	expires := time.Now().Add(24 * time.Hour)
 
 	u := &User{
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
-		Email:        req.Email,
-		PasswordHash: hash,
 
 		VerificationToken:        &hashedToken,
 		VerificationTokenExpires: &expires,
+		PlanID:                   1,
+		FirstName:                req.FirstName,
+		LastName:                 req.LastName,
+		Email:                    req.Email,
+		PasswordHash:             hash,
 	}
 
 	user, err := s.repo.Create(ctx, u)
