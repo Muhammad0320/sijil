@@ -21,7 +21,7 @@ func NewService(repo Repository, jwtSecret string, mailer EmailSender) *Service 
 	return &Service{repo: repo, jwtSecret: jwtSecret, mailer: mailer}
 }
 
-func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, error) {
+func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, *User, error) {
 
 	hash, _ := auth.HashPasswod(req.Password)
 
@@ -41,26 +41,41 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, er
 
 	id, err := s.repo.Create(ctx, u)
 	if err != nil {
-		return "", err
+		return "", &User{}, err
+	}
+
+	user, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return "", &User{}, err
 	}
 
 	go s.mailer(u.Email, "Verify Account", rawToken)
 
-	return auth.CreateJWT(s.jwtSecret, id)
+	token, err := auth.CreateJWT(s.jwtSecret, id)
+	if err != nil {
+		return "", &User{}, err
+	}
+
+	return token, user, nil
 }
 
-func (s *Service) Login(ctx context.Context, req LoginRequest) (string, error) {
+func (s *Service) Login(ctx context.Context, req LoginRequest) (string, *User, error) {
 
 	user, err := s.repo.GetByEmail(ctx, req.Email)
 	if err != nil {
-		return "", errors.New("invalid credentials")
+		return "", &User{}, errors.New("invalid credentials")
 	}
 
 	if !auth.ComparePasswordHash(req.Password, user.PasswordHash) {
-		return "", errors.New("invalid credentials")
+		return "", &User{}, errors.New("invalid credentials")
 	}
 
-	return auth.CreateJWT(s.jwtSecret, user.ID)
+	token, err := auth.CreateJWT(s.jwtSecret, user.ID)
+	if err != nil {
+		return "", &User{}, err
+	}
+
+	return token, user, nil
 }
 
 func (s *Service) VerifyEmail(ctx context.Context, rawToken string) error {
