@@ -5,7 +5,6 @@ import (
 	"errors"
 	"sijil-core/internals/auth"
 	"sijil-core/internals/core/domain"
-	"sijil-core/internals/database"
 	"sijil-core/internals/utils"
 )
 
@@ -74,7 +73,7 @@ func (s *Service) CreateProject(ctx context.Context, userID int, req CreateProje
 func (s *Service) ListProjects(ctx context.Context, userID int) ([]Project, error) {
 	return s.repo.ListByUserID(ctx, userID)
 }
-func (s *Service) AddMember(ctx context.Context, userID int, projectID int, req AddMemberRequest) error {
+func (s *Service) AddMember(ctx context.Context, userID int, projectID int, req AddMemberRequest, plan *domain.Plan) error {
 
 	project, err := s.repo.GetByID(ctx, projectID)
 	if err != nil {
@@ -95,12 +94,11 @@ func (s *Service) AddMember(ctx context.Context, userID int, projectID int, req 
 		return ErrForbidden
 	}
 
-	plan, _ := s.repo.GetUserPlan(ctx, project.UserID)
-	currentMembers, _ := s.repo.CountMembers(ctx, projectID)
-	limits := database.GetPlanLimits(plan)
-
-	if currentMembers >= limits.MaxMemebers {
-		return ErrLimitReached
+	if plan.MaxMemebers != -1 {
+		currentMembers, _ := s.repo.CountMembers(ctx, projectID)
+		if currentMembers >= plan.MaxMemebers {
+			return ErrLimitReached
+		}
 	}
 
 	// 4. Send Email (Stub for later)

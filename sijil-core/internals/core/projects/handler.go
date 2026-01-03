@@ -17,6 +17,18 @@ func NewHandler(s *Service) *Handler {
 	return &Handler{service: s}
 }
 
+func getPlan(c *gin.Context) *domain.Plan {
+	planRaw, exists := c.Get("plan")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "plan not found in context"})
+		return nil
+	}
+
+	plan := planRaw.(*domain.Plan)
+
+	return plan
+}
+
 func (h *Handler) Create(c *gin.Context) {
 	userID := c.GetInt("userID")
 	var req CreateProjectRequest
@@ -25,13 +37,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	planRaw, exists := c.Get("plan")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "plan not found in context"})
-		return
-	}
-
-	plan := planRaw.(*domain.Plan)
+	plan := getPlan(c)
 
 	resp, err := h.service.CreateProject(c.Request.Context(), userID, req, plan)
 	if err != nil {
@@ -71,7 +77,9 @@ func (h *Handler) AddMember(c *gin.Context) {
 		return
 	}
 
-	err := h.service.AddMember(c.Request.Context(), userID, projectID, req)
+	plan := getPlan(c)
+
+	err := h.service.AddMember(c.Request.Context(), userID, projectID, req, plan)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrForbidden):
