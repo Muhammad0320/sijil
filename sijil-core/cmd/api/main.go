@@ -15,6 +15,7 @@ import (
 	"sijil-core/internals/database"
 	"sijil-core/internals/hub"
 	"sijil-core/internals/ingest"
+	"sijil-core/internals/mailer"
 	"sijil-core/internals/server"
 	"sijil-core/internals/shared"
 	"syscall"
@@ -129,6 +130,7 @@ func main() {
 	} else {
 		fmt.Println("✅ Wal is empty. Clean startup.")
 	}
+
 	// Now it's sake to NUKE the files
 	wal.Reset()
 	// -- End Recovery
@@ -138,21 +140,26 @@ func main() {
 		log.Fatal("FATAL: JWT_SECRET environment variable is not set")
 	}
 
+	resendKey := os.Getenv("RESEND_API_KEY")
+	emailFrom := os.Getenv("EMAIL_FROM")
+	if resendKey == "" || emailFrom == "" {
+		log.Fatal("FATAL: Email related environment variable is not set")
+	}
+
+	mailerService := mailer.New(resendKey, emailFrom)
+
 	// -- Ingesting engine
 	engine := ingest.NewIngestionEngine(db, wal, h)
 	engine.Start(ctx)
 
-	mailer := func(email, subject, body string) error {
-		fmt.Printf("[Real mock] To %s | Token %s\n", email, body)
-		return nil
-	}
+	mailerFunc := mailerService.Send
 
 	identityRepo := identity.NewRepository(db)
-	identityService := identity.NewService(identityRepo, jwtSecret, mailer)
+	identityService := identity.NewService(identityRepo, jwtSecret, mailerFunc)
 	identityHandler := identity.NewHandler(identityService)
 
 	projectsRepo := projects.NewRepository(db)
-	projectService := projects.NewService(projectsRepo, mailer)
+	projectService := projects.NewService(projectsRepo, mailerFunc)
 	projectHandler := projects.NewHandler(projectService)
 
 	observabilityRepo := observability.NewRepository(db)
