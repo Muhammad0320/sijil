@@ -8,7 +8,7 @@ import sys
 
 ENDPOINT = "http://localhost:8080/api/v1/logs";
 BATCH_SIZE = 100;
-MAX_QUQUEUE_SIZE = 4096;
+MAX_QUEUE_SIZE = 4096;
 WORKER_COUNT = 3;
 MAX_RETRIES=3
 
@@ -24,7 +24,7 @@ class SijilLogger:
         self.service = service
         
         # State
-        self.queue = queue.Queue(maxsize=MAX_QUQUEUE_SIZE)
+        self.queue = queue.Queue(maxsize=MAX_QUEUE_SIZE)
         self._stop_event = threading.Event()
         
         # Worker pool

@@ -15,7 +15,7 @@ const (
 	batchSize = 250
 
 	maxQueue = 4096
-	
+
 	workerCount = 3
 
 	retryCount = 3
@@ -27,40 +27,36 @@ type Config struct {
 	Endpoint  string // For self hosted users
 
 	// The Tuning knob
-	FlushTime  time.Duration
+	FlushTime time.Duration
 }
 
-// For lazy devs (me included) 
+// For lazy devs (myself included)
 func DefaultConfig(key, secret string) Config {
 	return Config{
-		APIKey: key,
+		APIKey:    key,
 		APISecret: secret,
-		Endpoint: "http://localhost:8080/api/v1/logs",
+		Endpoint:  "http://localhost:8080/api/v1/logs",
 		FlushTime: 1 * time.Second,
 	}
 }
 
 type LogEntry struct {
-
-	Level string `json:"level"`
-	Service string `json:"service"`
-	Message string `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
-	Data map[string]interface{} `json:"data"`
-
+	Level     string                 `json:"level"`
+	Service   string                 `json:"service"`
+	Message   string                 `json:"message"`
+	Timestamp time.Time              `json:"timestamp"`
+	Data      map[string]interface{} `json:"data"`
 }
 
 type Client struct {
-
-	config Config
-	queue chan LogEntry
-	client *http.Client
-	wg sync.WaitGroup
+	config   Config
+	queue    chan LogEntry
+	client   *http.Client
+	wg       sync.WaitGroup
 	shutdown chan struct{}
-	isClosed bool 
-	mu sync.Mutex
-	service string 
-
+	isClosed bool
+	mu       sync.Mutex
+	service  string
 }
 
 func NewClient(cfg Config) *Client {
@@ -77,37 +73,38 @@ func NewClient(cfg Config) *Client {
 		cfg.FlushTime = 1 * time.Second
 	}
 
-
 	c := &Client{
-		config: cfg,
-		queue: make(chan LogEntry, maxQueue),
-		client: &http.Client{Timeout: 5 * time.Second},
+		config:   cfg,
+		queue:    make(chan LogEntry, maxQueue),
+		client:   &http.Client{Timeout: 5 * time.Second},
 		shutdown: make(chan struct{}),
-		service: "default", // can be overridden perlog or global
+		service:  "default", // can be overridden perlog or global
 	}
 
 	for i := range workerCount {
 		c.wg.Add(1)
-		go c.worker(i)  
+		go c.worker(i)
 	}
 
-	return  c
+	return c
 }
 
-func (c *Client) SetService(name string)  {
+func (c *Client) SetService(name string) {
 	// To prevent multiple updates
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.service = name
 }
 
-func (c *Client) Info(msg string, data map[string]interface{}) { c.push("info", msg, data)}
+func (c *Client) Info(msg string, data map[string]interface{}) { c.push("info", msg, data) }
 
-func (c *Client) Error(msg string, data map[string]interface{}) {c.push("error", msg, data)}
+func (c *Client) Error(msg string, data map[string]interface{}) { c.push("error", msg, data) }
 
-func (c *Client) Debug(msg string, data map[string]interface{}) {c.push("debug", msg, data)}
+func (c *Client) Debug(msg string, data map[string]interface{}) { c.push("debug", msg, data) }
 
-func (c *Client) Warn(msg string, data map[string]interface{}) {c.push("warn", msg, data)}
+func (c *Client) Warn(msg string, data map[string]interface{}) { c.push("warn", msg, data) }
+
+func (c *Client) Critical(msg string, data map[string]interface{}) { c.push("critical", msg, data) }
 
 func (c *Client) push(level, msg string, data map[string]interface{}) {
 
@@ -120,19 +117,19 @@ func (c *Client) push(level, msg string, data map[string]interface{}) {
 	c.mu.Unlock()
 
 	entry := LogEntry{
-		Level: level,
-		Message: msg,
-		Service: svc,
+		Level:     level,
+		Message:   msg,
+		Service:   svc,
 		Timestamp: time.Now(),
-		Data: data,
+		Data:      data,
 	}
 
-	select {	
+	select {
 	case c.queue <- entry:
 	default:
 		fmt.Fprintf(os.Stderr, "Sijil Queue full: Dropping los: %s\n", msg)
 	}
-} 
+}
 
 func (c *Client) Close() {
 	c.mu.Lock()
@@ -147,9 +144,8 @@ func (c *Client) Close() {
 	c.wg.Wait()
 }
 
-
-func (c *Client) sendWithRetry(logs []LogEntry)  {
-	payload, err := json.Marshal(logs) 
+func (c *Client) sendWithRetry(logs []LogEntry) {
+	payload, err := json.Marshal(logs)
 	if err != nil {
 		fmt.Printf("Sijil SDK Error: Failed to marshal batch %v\n", err)
 		return
@@ -161,40 +157,39 @@ func (c *Client) sendWithRetry(logs []LogEntry)  {
 			time.Sleep(time.Duration(100*1<<attempts) * time.Millisecond)
 		}
 
-			req, _ := http.NewRequest("POST", c.config.Endpoint, bytes.NewReader(payload))
+		req, _ := http.NewRequest("POST", c.config.Endpoint, bytes.NewReader(payload))
 
-	req.Header.Set("Content-Type", "application/json") //
-	req.Header.Set("X-Api-Key", c.config.APIKey)
-	req.Header.Set("Authorization", "Bearer "+c.config.APISecret)
+		req.Header.Set("Content-Type", "application/json") //
+		req.Header.Set("X-Api-Key", c.config.APIKey)
+		req.Header.Set("Authorization", "Bearer "+c.config.APISecret)
 
-	res, err := c.client.Do(req)
-	
-	// Network Error (DNS, timeout) -> Retry
-	if err != nil {
-		fmt.Printf("Sijil SDK Error: Failed to send batch: %v\n", err)
-		continue 
+		res, err := c.client.Do(req)
+
+		// Network Error (DNS, timeout) -> Retry
+		if err != nil {
+			fmt.Printf("Sijil SDK Error: Failed to send batch: %v\n", err)
+			continue
+		}
+		defer res.Body.Close()
+
+		// Success
+		if res.StatusCode >= 200 && res.StatusCode < 300 {
+			return
+		}
+
+		// Server error -> Retry
+		if res.StatusCode >= 500 {
+			fmt.Printf("Sijil SDK Error: Server error %d (attempt %d)\n", res.StatusCode, attempts+1)
+			continue
+		}
+
+		// Client error -> DO NOT retry (it will never succeed)
+		if res.StatusCode >= 400 {
+			fmt.Printf("Sijil: Rejected %d (Bad Config/Auth). Dropping batch.\n", res.StatusCode)
+			return
+		}
+
 	}
-	defer res.Body.Close()
-
-	// Success
-	if (res.StatusCode >= 200 && res.StatusCode < 300  ) {
-		return
-	}
-
-	// Server error -> Retry
-	if res.StatusCode >= 500 {
-		fmt.Printf("Sijil SDK Error: Server error %d (attempt %d)\n", res.StatusCode, attempts+1)
-		continue
-	}
-
-	// Client error -> DO NOT retry (it will never succeed) 
-	if res.StatusCode >= 400 {
-		fmt.Printf("Sijil: Rejected %d (Bad Config/Auth). Dropping batch.\n", res.StatusCode)
-		return
-	}
-
-	}
-
 
 	fmt.Fprintf(os.Stderr, "Sijil critical: Failed to send %d logs after multiple retries\n", len(logs))
 }
@@ -206,8 +201,10 @@ func (c *Client) worker(_ int) {
 	ticker := time.NewTicker(c.config.FlushTime)
 	defer ticker.Stop()
 
-	flush := func ()  {
-		if len(buffer) == 0 {return}
+	flush := func() {
+		if len(buffer) == 0 {
+			return
+		}
 
 		// Copy buffer to free for new logs immediately
 		batch := make([]LogEntry, len(buffer))
@@ -218,17 +215,17 @@ func (c *Client) worker(_ int) {
 	}
 
 	for {
-		select{
-		case entry, ok:= <- c.queue: 
+		select {
+		case entry, ok := <-c.queue:
 			if !ok {
 				flush()
-				return 
+				return
 			}
 			buffer = append(buffer, entry)
 			if len(buffer) >= batchSize {
 				flush()
 			}
-		case <- ticker.C: 
+		case <-ticker.C:
 			flush()
 
 		}

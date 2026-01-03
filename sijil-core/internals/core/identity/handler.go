@@ -20,11 +20,6 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-// type AuthResponse struct {
-// 	Token string `json:"token"`
-// 	User User `json:"user"`
-// }
-
 func (h *Handler) Register(c *gin.Context) {
 
 	var req RegisterRequest
@@ -32,6 +27,8 @@ func (h *Handler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	fmt.Println("Did you reach here? -------------------")
 
 	token, user, err := h.service.Register(c.Request.Context(), req)
 	if err != nil {
