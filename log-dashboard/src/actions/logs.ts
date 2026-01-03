@@ -1,3 +1,5 @@
+"use server";
+
 import { fetchClient } from "@/lib/client";
 import { getSession } from "@/lib/session";
 import { LogEntry } from "@/lib/types";

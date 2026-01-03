@@ -97,7 +97,11 @@ function CopyField({ value }: { value: string }) {
   return (
     <InputGroup>
       <KeyInput>{value}</KeyInput>
-      <IconButton onClick={handleCopy} title="Copy to clipboard">
+      <IconButton
+        onClick={handleCopy}
+        title="Copy to clipboard"
+        aria-label="Copy to clipboard"
+      >
         {copied ? <Check size={16} color="#2ecc71" /> : <Copy size={16} />}
       </IconButton>
     </InputGroup>

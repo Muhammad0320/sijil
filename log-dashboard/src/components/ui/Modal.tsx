@@ -106,7 +106,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
         >
           {title}
         </div>
-        <CloseButton onClick={onClose}>
+        <CloseButton onClick={onClose} aria-label="Close modal">
           <X size={20} />
         </CloseButton>
         {children}

@@ -53,6 +53,11 @@ const ProjectItem = styled.div<{ $active?: boolean; $pending?: boolean }>`
   &:hover {
     background: #21262d;
   }
+  &:focus-visible {
+    outline: 2px solid #58a6ff;
+    outline-offset: -2px;
+    background: #21262d;
+  }
 `;
 
 // NEW: Styles for the Key Reveal
@@ -150,7 +155,7 @@ export default function ProjectList({
     <Container>
       <Header>
         <Title>Projects</Title>
-        <AddButton onClick={onAddClick}>
+        <AddButton onClick={onAddClick} aria-label="Create new project">
           <Plus size={16} />
         </AddButton>
       </Header>
@@ -161,6 +166,14 @@ export default function ProjectList({
           $active={selectedId === p.id}
           $pending={p.pending}
           onClick={() => !p.pending && onSelect(p.id)}
+          role="button"
+          tabIndex={p.pending ? -1 : 0}
+          onKeyDown={(e) => {
+            if (!p.pending && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault();
+              onSelect(p.id);
+            }
+          }}
         >
           <span>{p.name}</span>
           {p.pending && <Loader2 size={12} className="animate-spin" />}
