@@ -40,6 +40,30 @@ func (r *postgresRepository) GetPlanByUserID(ctx context.Context, id int) (*doma
 	return &p, nil
 }
 
+func (r *postgresRepository) GetPlanByName(ctx context.Context, name string) (*domain.Plan, error) {
+	var p domain.Plan
+	err := r.db.QueryRow(ctx, `
+		SELECT id, name, max_projects, max_members, max_daily_logs, retention_days
+	FROM plans
+	WHERE name ILIKE $1
+	`, name).Scan(&p.ID, &p.Name, &p.MaxProjects, &p.MaxMemebers, &p.MaxDailyLogs, &p.RetentionDays)
+
+	if err != nil {
+		return &domain.Plan{}, fmt.Errorf("failed to get plan by name %s: %w", name, err)
+	}
+
+	return &p, nil
+}
+
+func (r *postgresRepository) UpdateUserPlan(ctx context.Context, userID, planID int) error {
+	_, err := r.db.Exec(ctx, `
+		UPDATE users
+		SET plan_id = $1
+		WHERE id = $2
+	`, planID, userID)
+	return err
+}
+
 func (r *postgresRepository) Create(ctx context.Context, u *User) (int, error) {
 	var newUserID int
 	err := r.db.QueryRow(ctx,

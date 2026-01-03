@@ -5,7 +5,6 @@ import (
 	"errors"
 	"sijil-core/internals/auth"
 	"sijil-core/internals/core/domain"
-	"sijil-core/internals/database"
 	"sijil-core/internals/utils"
 )
 
@@ -94,9 +93,8 @@ func (s *Service) AddMember(ctx context.Context, userID int, projectID int, req 
 
 	plan, _ := s.repo.GetUserPlan(ctx, project.UserID)
 	currentMembers, _ := s.repo.CountMembers(ctx, projectID)
-	limits := database.GetPlanLimits(plan)
 
-	if currentMembers >= limits.MaxMemebers {
+	if currentMembers >= plan.MaxMemebers {
 		return ErrLimitReached
 	}
 

@@ -32,6 +32,7 @@ type Server struct {
 	// -----
 	Router               *gin.Engine
 	identityRepo         identity.Repository
+	identityService      *identity.Service
 	identityHandler      *identity.Handler
 	projectHandler       *projects.Handler
 	observabilityHandler *observability.Handler
@@ -46,6 +47,7 @@ func NewServer(db *pgxpool.Pool, ingestEngine *ingest.IngestionEngine, hub *hub.
 		jwtSecret:    jwtSecret,
 
 		identityRepo:         handler.IdentityRepo,
+		identityService:      handler.IdentityService,
 		identityHandler:      handler.Identity,
 		projectHandler:       handler.Projects,
 		observabilityHandler: handler.Observability,
@@ -235,12 +237,9 @@ func (s *Server) handleGetLogs(c *gin.Context) {
 	serachQuery := c.DefaultQuery("q", "")
 
 	ctx := c.Request.Context()
-	plan, _ := database.GetUserPlan(ctx, s.db, userID.(int))
+	plan, _ := s.identityRepo.GetPlanByUserID(ctx, userID.(int))
 
-	limits := database.GetPlanLimits(plan)
-	rentention := limits.RetentionDays
-
-	logs, err := database.GetLogs(ctx, s.db, projectID, limit, offset, serachQuery, rentention)
+	logs, err := database.GetLogs(ctx, s.db, projectID, limit, offset, serachQuery, plan.RetentionDays)
 	if err != nil {
 		fmt.Printf("Failed to get logs: %v\n", err)
 
@@ -309,12 +308,12 @@ func (s *Server) handleCreateProject(c *gin.Context) {
 		return
 	}
 
-	plan, _ := database.GetUserPlan(c.Request.Context(), s.db, userID.(int))
+	plan, _ := s.identityRepo.GetPlanByUserID(c.Request.Context(), userID.(int))
 
 	// Check plan limit
 	count, _ := database.GetProjectCountByUserID(c.Request.Context(), s.db, userID.(int))
 
-	if count >= database.GetPlanLimits(plan).MaxProject {
+	if count >= plan.MaxProjects {
 		// I don't know the right status code to send
 		c.JSON(400, gin.H{"error": fmt.Sprintf("You've reached you limit of %d members! kindly unpgrade your plan.", count)})
 		return
@@ -431,12 +430,12 @@ func (s *Server) handleAddMember(c *gin.Context) {
 		return
 	}
 
-	plan, _ := database.GetUserPlan(c.Request.Context(), s.db, userID)
+	plan, _ := s.identityRepo.GetPlanByUserID(c.Request.Context(), userID)
 
 	// Check plan limit
 	count, _ := database.GetMemberCountByProjectID(c.Request.Context(), s.db, projectID)
 
-	if count >= database.GetPlanLimits(plan).MaxMemebers {
+	if count >= plan.MaxMemebers {
 		// I don't know the right status code to send
 		c.JSON(402, gin.H{"error": fmt.Sprintf("You've reached you limit of %d members! kindly unpgrade your plan.", count)})
 		return

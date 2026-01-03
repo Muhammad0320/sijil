@@ -3,6 +3,8 @@ package projects
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sijil-core/internals/core/domain"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -28,7 +30,7 @@ type Repository interface {
 	// Limits
 	CountProjects(ctx context.Context, userID int) (int, error)
 	CountMembers(ctx context.Context, projectID int) (int, error)
-	GetUserPlan(ctx context.Context, userID int) (string, error)
+	GetUserPlan(ctx context.Context, userID int) (*domain.Plan, error)
 }
 
 type postgresRepository struct {
@@ -173,8 +175,17 @@ func (r *postgresRepository) CountMembers(ctx context.Context, projectID int) (i
 	return count, err
 }
 
-func (r *postgresRepository) GetUserPlan(ctx context.Context, userID int) (string, error) {
-	var plan string
-	err := r.db.QueryRow(ctx, "SELECT plan FROM users WHERE id=$1", userID).Scan(&plan)
-	return plan, err
+func (r *postgresRepository) GetUserPlan(ctx context.Context, userID int) (*domain.Plan, error) {
+	var p domain.Plan
+	err := r.db.QueryRow(ctx, `
+		SELECT p.id, p.name, p.max_projects, p.max_members, p.max_daily_logs, p.retention_days
+		FROM users u
+		JOIN plans p ON u.plan_id = p.id
+		WHERE u.id = $1
+	`, userID).Scan(&p.ID, &p.Name, &p.MaxProjects, &p.MaxMemebers, &p.MaxDailyLogs, &p.RetentionDays)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get plan for user %d: %w", userID, err)
+	}
+	return &p, nil
 }

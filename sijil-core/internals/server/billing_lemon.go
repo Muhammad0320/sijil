@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"sijil-core/internals/database"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,17 +54,17 @@ func (s *Server) handleLemonWebhook(c *gin.Context) {
 
 	if event.Meta.EventName == "subscription_created" || event.Meta.EventName == "order_created" {
 
-		var planID int
+		var planName string
 		amount := event.Data.Attributes.Total
 
 		if amount >= 1900 && amount <= 2100 {
-			planID = 2
+			planName = "Pro"
 		} else if amount >= 9900 {
-			planID = 3
+			planName = "Ultra"
 		}
 
-		if planID > 1 {
-			err := database.UpgradeUserPlan(c.Request.Context(), s.db, event.Meta.CustomData.UserID, planID)
+		if planName != "" {
+			err := s.identityService.UpgradePlan(c.Request.Context(), event.Meta.CustomData.UserID, planName)
 			if err != nil {
 				c.Status(500)
 				return

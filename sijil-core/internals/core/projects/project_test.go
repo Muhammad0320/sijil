@@ -68,8 +68,10 @@ func TestProjectFlow(t *testing.T) {
 
 	// Server
 	handlers := shared.Handlers{
-		Identity: idHandler,
-		Projects: projHandler,
+		IdentityRepo:    idRepo,
+		IdentityService: idService,
+		Identity:        idHandler,
+		Projects:        projHandler,
 	}
 
 	srv := server.NewServer(db, nil, nil, nil, "test-secret", handlers)

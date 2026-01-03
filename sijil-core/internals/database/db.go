@@ -559,12 +559,6 @@ func RunRetentionPolicy(ctx context.Context, db *pgxpool.Pool) {
 	}
 }
 
-func GetUserPlan(ctx context.Context, db *pgxpool.Pool, userID int) (string, error) {
-	var plan string
-	err := db.QueryRow(ctx, "SELECT plan FROM users WHERE id = $1", userID).Scan(&plan)
-	return plan, err
-}
-
 func CheckProjectAccess(ctx context.Context, db *pgxpool.Pool, userID, projectID int) (bool, error) {
 	var exists bool
 
@@ -727,13 +721,3 @@ func ResetPasswordByToken(ctx context.Context, db *pgxpool.Pool, tokenHash strin
 	return res.RowsAffected() > 0, nil
 }
 
-func UpgradeUserPlan(ctx context.Context, db *pgxpool.Pool, UserID, planID int) error {
-
-	_, err := db.Exec(ctx, `
-		UPDATE users
-		SET plan_id = $1
-		WHERE id = $2
-	`, planID, UserID)
-
-	return err
-}

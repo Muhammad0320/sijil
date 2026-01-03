@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"sijil-core/internals/database"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,15 +54,15 @@ func (s *Server) handlePayStackWebhook(c *gin.Context) {
 
 	// 3. Update the database
 	if event.Event == "charge.success" {
-		var planID int
+		var planName string
 		if event.Data.Amount == 12_500_00 {
-			planID = 2 // pro
+			planName = "Pro"
 		} else if event.Data.Amount == 95_000_00 {
-			planID = 3 // ultra
+			planName = "Ultra"
 		}
 
-		if planID > 1 {
-			err := database.UpgradeUserPlan(c.Request.Context(), s.db, event.Data.Metadata.UserID, planID)
+		if planName != "" {
+			err := s.identityService.UpgradePlan(c.Request.Context(), event.Data.Metadata.UserID, planName)
 			if err != nil {
 				c.Status(500)
 				return

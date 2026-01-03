@@ -7,8 +7,9 @@ import (
 )
 
 type Handlers struct {
-	IdentityRepo  identity.Repository
-	Identity      *identity.Handler
-	Projects      *projects.Handler
-	Observability *observability.Handler
+	IdentityRepo    identity.Repository
+	IdentityService *identity.Service
+	Identity        *identity.Handler
+	Projects        *projects.Handler
+	Observability   *observability.Handler
 }

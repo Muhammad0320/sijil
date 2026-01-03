@@ -64,8 +64,9 @@ func setupTestServer(t *testing.T) *Server {
 	projectHandler := projects.NewHandler(projectService)
 
 	handlers := shared.Handlers{
-		Identity: idHandler,
-		Projects: projectHandler,
+		Identity:        idHandler,
+		IdentityService: idService,
+		Projects:        projectHandler,
 	}
 
 	// We don't need a real WAL for RBAC testing, but the engine needs one
@@ -100,7 +101,6 @@ func TestRBAC_EndToEnd(t *testing.T) {
 	s := setupTestServer(t)
 	// Ensure you have access to your DB pool here.
 	// If 's' contains the DB, use s.DB. If it's a global variable, use that.
-	db := s.db
 
 	// --- 1. SETUP USERS ---
 	// Register User A (Admin)
@@ -123,12 +123,8 @@ func TestRBAC_EndToEnd(t *testing.T) {
 	// [INSERTED FIX]: FORCE UPGRADE ADMIN TO PRO
 	// We do this here so Step 4 doesn't fail on "Quota Exceeded" before hitting "Conflict"
 	// ----------------------------------------------------------------------
-	_, err = db.Exec(context.Background(), `
-       UPDATE users
-	   SET plan = $1
-	   WHERE email = $2
-    `, "pro", "admin@test.com")
-	if err != nil {
+	adminUser, _ := s.identityRepo.GetByEmail(context.Background(), "admin@test.com")
+	if err := s.identityService.UpgradePlan(context.Background(), adminUser.ID, "Pro"); err != nil {
 		t.Fatalf("Failed to force upgrade admin user: %v", err)
 	}
 	// ----------------------------------------------------------------------

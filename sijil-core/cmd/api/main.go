@@ -160,10 +160,11 @@ func main() {
 	observabilityHandler := observability.NewHandler(observabilityService)
 
 	handlers := shared.Handlers{
-		IdentityRepo:  identityRepo,
-		Identity:      identityHandler,
-		Projects:      projectHandler,
-		Observability: observabilityHandler,
+		IdentityRepo:    identityRepo,
+		IdentityService: identityService,
+		Identity:        identityHandler,
+		Projects:        projectHandler,
+		Observability:   observabilityHandler,
 	}
 
 	srv := server.NewServer(db, engine, h, authCache, jwtSecret, handlers)
