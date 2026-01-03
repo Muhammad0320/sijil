@@ -2,6 +2,7 @@ package projects
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"sijil-core/internals/core/domain"
 	"strconv"
@@ -23,6 +24,8 @@ func getPlan(c *gin.Context) *domain.Plan {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "plan not found in context"})
 		return nil
 	}
+
+	fmt.Println("I think I was able to fetch the plannnn ------------- ")
 
 	plan := planRaw.(*domain.Plan)
 

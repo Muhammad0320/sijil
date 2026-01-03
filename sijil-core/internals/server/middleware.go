@@ -91,6 +91,7 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 
 		plan, err := s.identityRepo.GetPlanByUserID(c.Request.Context(), userID)
 		if err != nil {
+			fmt.Println("This is the stupid error ----------------", err)
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch plan"})
 			return
 		}
