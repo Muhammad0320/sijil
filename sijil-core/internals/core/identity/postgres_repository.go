@@ -71,7 +71,7 @@ func (r *postgresRepository) Create(ctx context.Context, u *User) (*User, error)
 	err := r.db.QueryRow(ctx,
 		`INSERT INTO users (firstname, lastname, email, password_hash, verification_token, verification_expires, plan_id) 
      VALUES ($1, $2, $3, $4, $5, $6, $7) 
-     RETURNING *`, // Returns all columns from the new row
+     RETURNING id, firstname, lastname, email, password_hash, verification_token, plan_id, created_at`,
 		u.FirstName, u.LastName, u.Email, u.PasswordHash, u.VerificationToken, u.VerificationTokenExpires, 1,
 	).Scan(
 		&insertedUser.ID,
