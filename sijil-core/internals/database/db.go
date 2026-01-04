@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"strings"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -113,8 +112,10 @@ CREATE TABLE IF NOT EXISTS users (
 	password_reset_expires TIMESTAMP,
     avatar_url TEXT,
 	plan_id INTEGER  NOT NULL REFERENCES plans(id),
+	plan_expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
 `
 	_, err = db.Exec(ctx, createUserTableSQL)
 	if err != nil {
@@ -226,92 +227,6 @@ CREATE TABLE IF NOT EXISTS users (
 
 	fmt.Println("Database schema is ready!")
 	return nil
-}
-
-// InsertLog writes a new LogEntry to the database.
-func InsertLog(ctx context.Context, db *pgxpool.Pool, log LogEntry) error {
-	// I wish there's a ternary expression equivalent in Go
-	var logTime = log.Timestamp
-	if logTime.IsZero() {
-		logTime = time.Now()
-	}
-
-	insertSQL := `
-		INSERT INTO logs (timestamp, level, message, service, project_id, data) 
-		VALUES ($1, $2, $3, $4, $5, $6)`
-
-	_, err := db.Exec(ctx, insertSQL,
-		logTime,
-		log.Level,
-		log.Message,
-		log.Service,
-		log.ProjectID,
-		log.Data,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to insert log: %w", err)
-	}
-
-	return nil
-}
-
-func GetLogs(ctx context.Context, db *pgxpool.Pool, projectID, limit, offset int, searchQuery string, retentionDays int) ([]LogEntry, error) {
-
-	// 1. Safety: clamp limit
-	const MaxLimit = 1000
-	if limit > MaxLimit {
-		limit = MaxLimit
-	}
-
-	// 2.Enforce a db timeout
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-
-	baseQuery := `
-		SELECT timestamp, level, service, message, data
-		FROM logs
-		WHERE project_id = $1
-	`
-
-	args := []interface{}{projectID}
-	argsCounter := 2
-
-	var queryBuilder strings.Builder
-	queryBuilder.WriteString(baseQuery)
-
-	// Conditionally add the WHERE clause for search
-	if searchQuery != "" {
-		// This is the FTS part
-		queryBuilder.WriteString(fmt.Sprintf(" AND search_vector @@ plainto_tsquery('simple', $%d)", argsCounter))
-		args = append(args, searchQuery)
-		argsCounter++
-	}
-	queryBuilder.WriteString(fmt.Sprintf(" AND timestamp > NOW() - INTERVAL '%d days'", retentionDays))
-
-	queryBuilder.WriteString(fmt.Sprintf(" ORDER BY timestamp DESC LIMIT $%d OFFSET $%d", argsCounter, argsCounter+1))
-	args = append(args, limit, offset)
-
-	getSQL := queryBuilder.String()
-	fmt.Println("Final Query:", getSQL)
-
-	rows, err := db.Query(ctx, getSQL, args...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get logs: %w", err)
-	}
-	defer rows.Close()
-
-	var logs []LogEntry
-	for rows.Next() {
-		var log LogEntry
-		err := rows.Scan(&log.Timestamp, &log.Level, &log.Message, &log.Service, &log.Data)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan log: %w", err)
-		}
-		logs = append(logs, log)
-	}
-
-	return logs, nil
 }
 
 type Project struct {
