@@ -70,7 +70,7 @@ func promoteUser(ctx context.Context, db *pgxpool.Pool, email string, planID int
 
 	tag, err := db.Exec(ctx, "UPDATE users SET plan_id = $1 WHERE email = $2", planID, email)
 	if err != nil {
-		log.Fatal("❌ Error: %v", err)
+		log.Fatalf("❌ Error: %v", err)
 	}
 
 	if tag.RowsAffected() == 0 {
@@ -84,7 +84,7 @@ func banUser(ctx context.Context, db *pgxpool.Pool, email string) {
 
 	_, err := db.Exec(ctx, "UPDATE users SET password_hash = 'BANNED' WHERE email = $1", email)
 	if err != nil {
-		log.Fatal("❌ Error %v", err)
+		log.Fatalf("❌ Error %v", err)
 	}
 
 	fmt.Printf("User %s has been banned (password scrambled) \n", email)
