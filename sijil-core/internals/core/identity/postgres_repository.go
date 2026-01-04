@@ -23,18 +23,21 @@ func (r *postgresRepository) GetPlanByUserID(ctx context.Context, id int) (*doma
 
 	user, err := r.GetByID(ctx, id)
 	if err != nil {
-		return &domain.Plan{}, fmt.Errorf("faild to get plan %s", err)
+		fmt.Println("From identity repo user err check -----", err)
+		return &domain.Plan{}, fmt.Errorf("failed to get plan %s", err)
 	}
+	fmt.Println("From identity repo -----", user)
 
 	var p domain.Plan
 	err = r.db.QueryRow(ctx, `
-		SELECT id, name, max_projects, max_members, max_daily_logs, retention_days
- 	FROM plans 
+	SELECT id, name, max_projects, max_members, max_daily_logs, retention_days
+	FROM plans 
 	WHERE id = $1
 	`, user.PlanID).Scan(&p.ID, &p.Name, &p.MaxProjects, &p.MaxMemebers, &p.MaxDailyLogs, &p.RetentionDays)
 
 	if err != nil {
-		return &domain.Plan{}, fmt.Errorf("faild to get plan %s", err)
+		fmt.Println("From identity repo plan err check -----", err)
+		return &domain.Plan{}, fmt.Errorf("failed to get plan %s", err)
 	}
 
 	return &p, nil
@@ -118,10 +121,10 @@ func (r *postgresRepository) GetByID(ctx context.Context, id int) (*User, error)
 	var u User
 
 	err := r.db.QueryRow(ctx,
-		`SELECT id, firstname, lastname, email, password_hash, avatar_url, plan_id, is_verified 
+		`SELECT id, firstname, lastname, email, password_hash,  plan_id, is_verified 
          FROM users WHERE id = $1`,
 		id,
-	).Scan(&u.ID, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash, &u.AvatarURL, &u.PlanID, &u.IsVerified)
+	).Scan(&u.ID, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash, &u.PlanID, &u.IsVerified)
 
 	if err != nil {
 		return &u, errors.New("user not found")
