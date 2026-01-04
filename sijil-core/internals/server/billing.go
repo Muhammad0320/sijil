@@ -64,15 +64,15 @@ func (s *Server) handlePayStackWebhook(c *gin.Context) {
 		case amount == 12_500_00:
 			planID = 2
 			duration = 30 * 24 * time.Hour
-		case amount == 125_000_00:
+		case amount == 125_000_00: // 2 months free
 			planID = 2
-			duration = 30 * 24 * time.Hour
+			duration = 365 * 24 * time.Hour
 		case amount == 95_000_00:
 			planID = 3
 			duration = 30 * 24 * time.Hour
-		case amount == 950_000_00:
+		case amount == 950_000_00: // 2 months free
 			planID = 3
-			duration = 30 * 24 * time.Hour
+			duration = 365 * 24 * time.Hour
 		}
 
 		if planID > 1 {

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,16 +56,30 @@ func (s *Server) handleLemonWebhook(c *gin.Context) {
 	if event.Meta.EventName == "subscription_created" || event.Meta.EventName == "order_created" {
 
 		var planID int
+		var duration time.Duration
 		amount := event.Data.Attributes.Total
 
-		if amount >= 1900 && amount <= 2100 {
+		switch {
+		// PRO
+		case amount == 20_00:
 			planID = 2
-		} else if amount >= 9900 {
+			duration = 30 * 24 * time.Hour
+		case amount == 200_00: // 2 months free
+			planID = 2
+			duration = 365 * 24 * time.Hour
+		// Ultra
+		case amount == 100_00:
 			planID = 3
+			duration = 30 * 24 * time.Hour
+		case amount == 1_000_00: // 2 months free
+			planID = 3
+			duration = 365 * 24 * time.Hour
+
 		}
 
 		if planID > 1 {
-			err := s.identityRepo.UpdateUserPlan(c.Request.Context(), event.Meta.CustomData.UserID, planID)
+			expiry := time.Now().Add(duration)
+			err := s.identityRepo.UpdateUserPlan(c.Request.Context(), event.Meta.CustomData.UserID, planID, expiry)
 			if err != nil {
 				c.Status(500)
 				return
