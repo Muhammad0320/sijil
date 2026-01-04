@@ -89,8 +89,8 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 
 	authGroup := apiv1.Group("/auth")
 	{
-		authGroup.POST("/register", s.identityHandler.Register)
-		authGroup.POST("/login", s.identityHandler.Login)
+		authGroup.POST("/register", s.rateLimitMiddleware(rate.Limit(5.0/60.0), 5), s.identityHandler.Register)
+		authGroup.POST("/login", s.rateLimitMiddleware(rate.Limit(5.0/60.0), 5), s.identityHandler.Login)
 
 		// Sensitive routes
 		authGroup.GET("/verify", s.rateLimitMiddleware(rate.Limit(1.0/60.0), 5), s.identityHandler.VerifyEmail)
