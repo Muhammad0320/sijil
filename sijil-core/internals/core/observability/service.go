@@ -40,7 +40,7 @@ func (s *Service) ProcessAndQueue(ctx context.Context, projectID int, logs []Log
 		}
 
 		if len(l.Message) > 1000 {
-			l.Message = l.Message[:10000] + "..."
+			l.Message = l.Message[:1000] + "..."
 		}
 
 		dbLogs[i] = database.LogEntry(l)

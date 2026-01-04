@@ -10,46 +10,44 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const  (
-
-	writeWait = 10 * time.Second
-	pongWait = 60 * time.Second
-	pingPeriod = (pongWait * 9) / 10
+const (
+	writeWait      = 10 * time.Second
+	pongWait       = 60 * time.Second
+	pingPeriod     = (pongWait * 9) / 10
 	maxMessageSize = 512
-
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize: 1024,
+	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	// Absoulutely crucial for security, in prod env
 	CheckOrigin: func(r *http.Request) bool {
-		return true 
+		return true
 	},
 }
 
 // Wrapper appround ws conn and the line
 type Client struct {
-	Hub *Hub
-	Conn *websocket.Conn
-	Send chan []byte 
-	ProjectID int 
-	userID int 
+	Hub       *Hub
+	Conn      *websocket.Conn
+	Send      chan []byte
+	ProjectID int
+	userID    int
 }
 
 // -- This fxn reads from the websocket --
 // pumps message from the ws conn, to the hub
 func (c *Client) readPump() {
 
-	 defer func ()  {
-			c.Conn.Close()
-			c.Hub.unregister <- c 
-	 }()
-	 c.Conn.SetReadLimit(maxMessageSize)
-	 c.Conn.SetReadDeadline(time.Now().Add(pongWait))
-	 c.Conn.SetPongHandler(func(string) error {c.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil})
+	defer func() {
+		c.Conn.Close()
+		c.Hub.unregister <- c
+	}()
+	c.Conn.SetReadLimit(maxMessageSize)
+	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
+	c.Conn.SetPongHandler(func(string) error { c.Conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 
-	 for {
+	for {
 
 		_, _, err := c.Conn.ReadMessage()
 		if err != nil {
@@ -59,7 +57,7 @@ func (c *Client) readPump() {
 			break
 		}
 
-	 }
+	}
 
 }
 
@@ -69,14 +67,14 @@ func (c *Client) writePump() {
 
 	ticker := time.NewTicker(pingPeriod)
 	// When this function ends (e.g connection breake, clean up)
-	defer func ()  {
-			ticker.Stop()
-			c.Conn.Close()
+	defer func() {
+		ticker.Stop()
+		c.Conn.Close()
 	}()
 
 	for {
 		select {
-		case message, ok := <- c.Send:
+		case message, ok := <-c.Send:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
@@ -86,10 +84,10 @@ func (c *Client) writePump() {
 			if err := c.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
 				return
 			}
-		case <- ticker.C: 
+		case <-ticker.C:
 			// Send a ping message to the client to keep conn alive
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil{
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		}
@@ -99,19 +97,18 @@ func (c *Client) writePump() {
 
 // Hub maintains the set of active clients and broadcast messages
 type Hub struct {
-	
-	rooms map[int]map[*Client]bool 
-	broadcast chan database.LogEntry
-	register chan *Client
+	rooms      map[int]map[*Client]bool
+	broadcast  chan database.LogEntry
+	register   chan *Client
 	unregister chan *Client
 }
 
 func NewHub() *Hub {
 
 	return &Hub{
-		rooms: make(map[int]map[*Client]bool),
-		broadcast: make(chan database.LogEntry),
-		register: make(chan *Client),
+		rooms:      make(map[int]map[*Client]bool),
+		broadcast:  make(chan database.LogEntry),
+		register:   make(chan *Client),
 		unregister: make(chan *Client),
 	}
 
@@ -119,18 +116,18 @@ func NewHub() *Hub {
 
 func (h *Hub) Run() {
 
-	for  {
+	for {
 
 		select {
 
-		case client := <- h.register: 
+		case client := <-h.register:
 			if h.rooms[client.ProjectID] == nil {
 				h.rooms[client.ProjectID] = make(map[*Client]bool)
 			}
 
-			h.rooms[client.ProjectID][client] = true 
-		
-		case client := <- h.unregister: 
+			h.rooms[client.ProjectID][client] = true
+
+		case client := <-h.unregister:
 			if room, ok := h.rooms[client.ProjectID]; ok {
 				if _, ok := room[client]; ok {
 					delete(room, client)
@@ -141,7 +138,7 @@ func (h *Hub) Run() {
 					delete(h.rooms, client.ProjectID)
 				}
 			}
-		case logEntry := <- h.broadcast: 
+		case logEntry := <-h.broadcast:
 
 			room := h.rooms[logEntry.ProjectID]
 
@@ -150,11 +147,11 @@ func (h *Hub) Run() {
 			}
 			message, _ := json.Marshal(logEntry)
 
-			for client := range  room {
+			for client := range room {
 				select {
 				case client.Send <- message:
 					// Message sent successfully
-				default: 
+				default:
 					close(client.Send)
 					delete(room, client)
 				}
@@ -165,6 +162,10 @@ func (h *Hub) Run() {
 
 func (h *Hub) BroadcastLog(logEntry database.LogEntry) {
 
+	if len(h.rooms) == 0 {
+		return
+	}
+
 	h.broadcast <- logEntry
 }
 
@@ -172,7 +173,7 @@ func (h *Hub) BroadcastLog(logEntry database.LogEntry) {
 // handles ws request from the peer
 func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, projectID, userID int) {
 
-	// upgrade http to ws 
+	// upgrade http to ws
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -181,12 +182,12 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, projectID, userID
 
 	// Create the new client
 	client := &Client{
-		 Hub: hub, 
-		 Conn: conn,
-		 Send: make(chan []byte, 256),
+		Hub:       hub,
+		Conn:      conn,
+		Send:      make(chan []byte, 256),
 		ProjectID: projectID,
-		userID: userID,
-		}
+		userID:    userID,
+	}
 
 	// Register client
 	client.Hub.register <- client
@@ -194,4 +195,4 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request, projectID, userID
 	// Thse goroutines run in the background for life of the conn
 	go client.writePump()
 	go client.readPump()
-};
+}

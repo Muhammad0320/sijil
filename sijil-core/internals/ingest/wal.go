@@ -24,7 +24,7 @@ type LogEntry struct {
 	Level     string                 `json:"level"`
 	Message   string                 `json:"message"`
 	Service   string                 `json:"service"`
-	ProjectID int                    `json:"-"`
+	ProjectID int                    `json:"project_id"`
 	Data      map[string]interface{} `json:"data,omitempty"`
 	SegmentID int                    `json:"-"`
 }
