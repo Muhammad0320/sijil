@@ -46,6 +46,50 @@ func mian() {
 
 }
 
+func promoteUser(ctx context.Context, db *pgxpool.Pool, email string, planID string) {
+
+	tag, err := db.Exec(ctx, "UPDATE users SET plan_id = $1 WHERE email = $2", planID, email)
+	if err != nil {
+		log.Fatal("❌ Error: %v", err)
+	}
+
+	if tag.RowsAffected() == 0 {
+		fmt.Println("⚠️ User not found.")
+	} else {
+		fmt.Printf("✅ User %s upgraded to Plan %d\n", email, planID)
+	}
+}
+
+func banUser(ctx context.Context, db *pgxpool.Pool, email string) {
+
+	_, err := db.Exec(ctx, "UPDATE users SET password_hash = 'BANNED' WHERE email = $1", email)
+	if err != nil {
+		log.Fatal("❌ Error %v", err)
+	}
+
+	fmt.Printf("User %s has been banned (password scrambled) \n", email)
+
+}
+
+func showStats(ctx context.Context, db *pgxpool.Pool) {
+
+	var userCount, logCount, projectCount int
+	var dbSize string
+
+	db.QueryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&userCount)
+	db.QueryRow(ctx, "SELECT COUNT(*) FROM projects").Scan(&projectCount)
+	db.QueryRow(ctx, "SELECT COUNT(*) FROM logs").Scan(&logCount)
+	db.QueryRow(ctx, "SELECT pg_size_pretty(pg_database_size(current_database()))").Scan(&dbSize)
+
+	fmt.Println("\n ------- 📊 SIJIL ADMIN STATS ------------")
+	fmt.Printf("⚔️ Total users: %d\n", projectCount)
+	fmt.Printf("👥 Total users: %d\n", userCount)
+	fmt.Printf("📃 Total log: %d\n", logCount)
+	fmt.Printf("💾 DB Size: %s\n", dbSize)
+	fmt.Println("----------------------------------")
+
+}
+
 func printHelp() {
 	fmt.Println("Sijil Admin CLI tool")
 	fmt.Println("Flags:")
