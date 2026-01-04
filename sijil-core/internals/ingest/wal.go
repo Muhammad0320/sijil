@@ -137,7 +137,7 @@ func (w *WAL) WriteBatch(batch []database.LogEntry) error {
 		}
 
 		// Write Data
-		_, err = w.bufWriter.Write(data)
+		_, err := w.bufWriter.Write(data)
 		if err != nil {
 			return err
 		}
