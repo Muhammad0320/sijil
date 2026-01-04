@@ -104,10 +104,10 @@ func (r *postgresRepository) GetByEmail(ctx context.Context, email string) (*Use
 	var u User
 
 	err := r.db.QueryRow(ctx,
-		`SELECT id, firstname, lastname, email, password_hash, avatar_url ,plan_id, is_verified 
+		`SELECT id, firstname, lastname, email, password_hash, avatar_url ,plan_id, plan_expires_at, is_verified 
          FROM users WHERE email = $1`,
 		email,
-	).Scan(&u.ID, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash, &u.AvatarURL, &u.PlanID, &u.IsVerified)
+	).Scan(&u.ID, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash, &u.AvatarURL, &u.PlanID, &u.PlanExpiredAt, &u.IsVerified)
 
 	if err != nil {
 		return nil, errors.New("user not found")
@@ -121,10 +121,10 @@ func (r *postgresRepository) GetByID(ctx context.Context, id int) (*User, error)
 	var u User
 
 	err := r.db.QueryRow(ctx,
-		`SELECT id, firstname, lastname, email, password_hash, avatar_url, plan_id, is_verified 
+		`SELECT id, firstname, lastname, email, password_hash, avatar_url, plan_id, plan_expires_at, is_verified 
          FROM users WHERE id = $1`,
 		id,
-	).Scan(&u.ID, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash, &u.AvatarURL, &u.PlanID, &u.IsVerified)
+	).Scan(&u.ID, &u.FirstName, &u.LastName, &u.Email, &u.PasswordHash, &u.AvatarURL, &u.PlanID, &u.PlanExpiredAt, &u.IsVerified)
 
 	if err != nil {
 		return &u, errors.New("user not found")
