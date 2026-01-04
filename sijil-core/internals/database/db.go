@@ -314,67 +314,6 @@ func GetLogs(ctx context.Context, db *pgxpool.Pool, projectID, limit, offset int
 	return logs, nil
 }
 
-type User struct {
-	ID           int
-	PasswordHash string
-}
-
-func CreateUser(ctx context.Context, db *pgxpool.Pool, firstname, lastname, email, hashpassword string, vToken string, vExpiry time.Time) (int, error) {
-
-	var newUserID int
-	err := db.QueryRow(ctx,
-		`INSERT INTO users (firstname, lastname, email, password_hash, verification_token, verification_token_expires_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-		firstname, lastname, email, hashpassword, vToken, vExpiry,
-	).Scan(&newUserID)
-
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == "23505" {
-				return 0, EmailExists
-			}
-		}
-		return 0, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	return newUserID, nil
-}
-
-func GetUserByEmail(ctx context.Context, db *pgxpool.Pool, email string) (User, error) {
-
-	var user User
-	err := db.QueryRow(ctx,
-		`SELECT id, password_hash FROM users WHERE email = $1`,
-		email).Scan(&user.ID, &user.PasswordHash)
-	if err != nil {
-		return user, fmt.Errorf("failed to get user: %w", err)
-	}
-
-	return user, nil
-}
-
-type UserF struct {
-	ID        int
-	FirstName string
-	LastName  string
-	Email     string
-	AvatarUrl string
-	Plan      string
-}
-
-func GetUserByID(ctx context.Context, db *pgxpool.Pool, userID int) (UserF, error) {
-	var user UserF
-
-	err := db.QueryRow(ctx, `SELECT id, firstname, lastname, email, avatar_url, plan 
-	FROM users WHERE id = $1`, userID).Scan(&user)
-
-	if err != nil {
-		return user, fmt.Errorf("failed to get user: %w", err)
-	}
-
-	return user, nil
-}
-
 type Project struct {
 	ID            int
 	UserID        int
@@ -622,26 +561,6 @@ func CheckProjectAccess(ctx context.Context, db *pgxpool.Pool, userID, projectID
 	return exists, err
 }
 
-func AddProjectMember(ctx context.Context, db *pgxpool.Pool, projectID int, email, role string) error {
-
-	user, err := GetUserByEmail(ctx, db, email)
-	if err != nil {
-		return fmt.Errorf("User not found")
-	}
-
-	commandTag, err := db.Exec(ctx, `INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, projectID, user.ID, role)
-
-	if err != nil {
-		return fmt.Errorf("failed to add project member: %w", err)
-	}
-
-	if commandTag.RowsAffected() == 0 {
-		return fmt.Errorf("user is already a member")
-	}
-
-	return err
-}
-
 func GetProjectRole(ctx context.Context, db *pgxpool.Pool, userID, projectID int) (string, error) {
 	// 1. Check if Owner
 	var isOwner bool
@@ -673,16 +592,6 @@ func GetMemberCountByProjectID(ctx context.Context, db *pgxpool.Pool, projectID 
 	}
 
 	return count, err
-}
-
-func GetProjectCountByUserID(ctx context.Context, db *pgxpool.Pool, userID int) (int, error) {
-	var count int
-	err := db.QueryRow(ctx, `SELECT COUNT(*) FROM projects WHERE user_id = $1`, userID).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get projects count: %s", err)
-	}
-
-	return count, nil
 }
 
 type ProjectMember struct {
