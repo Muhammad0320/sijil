@@ -1,13 +1,13 @@
 package hub
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"sijil-core/internals/database"
 	"sync"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/gorilla/websocket"
 )
 
@@ -140,22 +140,24 @@ func (h *Hub) Run() {
 					delete(h.rooms, client.ProjectID)
 				}
 			}
+
 		case logEntry := <-h.broadcast:
 
-			room := h.rooms[logEntry.ProjectID]
+			projectID := logEntry.ProjectID
 
-			if room == nil {
+			if len(h.rooms[projectID]) == 0 {
 				continue
 			}
+
 			message, _ := json.Marshal(logEntry)
 
-			for client := range room {
+			for client := range h.rooms[projectID] {
 				select {
 				case client.Send <- message:
 					// Message sent successfully
 				default:
 					close(client.Send)
-					delete(room, client)
+					delete(h.rooms[projectID], client)
 				}
 			}
 		}
@@ -163,10 +165,6 @@ func (h *Hub) Run() {
 }
 
 func (h *Hub) BroadcastLog(logEntry database.LogEntry) {
-
-	if len(h.rooms) == 0 {
-		return
-	}
 
 	h.broadcast <- logEntry
 }
