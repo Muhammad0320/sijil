@@ -10,7 +10,6 @@ import {
   Cpu,
   Check,
   Info,
-  Server,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -24,6 +23,7 @@ import websocket from "../../../public/websocket.png";
 import HeroRollingText, {
   HandDrawnHighlight,
 } from "@/components/marketing/HeroText";
+import BenchmarkSection from "@/components/marketing/benchmark";
 
 // --- ANIMATIONS ---
 const blink = keyframes`
@@ -561,6 +561,9 @@ export default function MarketingPage() {
           </VisualContainer>
         </Reveal>
       </HeroSection>
+
+      {/* BenchMark Section */}
+      <BenchmarkSection />
 
       {/* 2. FEATURES (BENTO GRID) */}
       <FeatureSection>
