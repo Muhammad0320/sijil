@@ -5,6 +5,9 @@ import Link from "next/link";
 import { BorderBeamButton } from "@/components/ui/borderBeamButton";
 import Footer from "@/components/layout/Footer";
 
+import Image from "next/image";
+import logo from "../../../public/logo.png";
+
 const Nav = styled.nav`
   display: flex;
   justify-content: space-between;
@@ -24,25 +27,6 @@ const MainContent = styled.main`
   padding-top: 80px; /* MATCH THE HEADER HEIGHT */
   background-color: #050505;
   min-height: 100vh;
-`;
-
-const Logo = styled.div`
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &::before {
-    content: "";
-    width: 12px;
-    height: 12px;
-    background: #238636;
-    border-radius: 50%;
-    box-shadow: 0 0 10px #238636;
-  }
 `;
 
 const NavLinks = styled.div`
@@ -66,6 +50,26 @@ const AuthButtons = styled.div`
   align-items: center;
 `;
 
+const LogoContainer = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+`;
+
+const LogoIcon = styled.div`
+  width: 32px;
+  height: 32px;
+  position: relative;
+`;
+
+const BrandName = styled.span`
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+`;
+
 export default function MarketingLayout({
   children,
 }: {
@@ -74,7 +78,12 @@ export default function MarketingLayout({
   return (
     <div style={{ backgroundColor: "#050505", minHeight: "100vh" }}>
       <Nav>
-        <Logo>Sijil</Logo>
+        <LogoContainer href="/">
+          <LogoIcon>
+            <Image src={logo} alt="sijil logo" />
+          </LogoIcon>
+          <BrandName>Sijil</BrandName>
+        </LogoContainer>
 
         {/* Hide links on mobile for now to prevent clutter */}
         <NavLinks style={{ display: "none" }}>
