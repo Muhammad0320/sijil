@@ -20,6 +20,10 @@ import vault from "../../../public/vault-green.png";
 import server from "../../../public/server.png";
 import cacheImg from "../../../public/cache.png";
 import websocket from "../../../public/websocket.png";
+import HeroRollingText, {
+  HandDrawnHighlight,
+} from "@/components/marketing/HeroText";
+import BenchmarkSection from "@/components/marketing/benchmark";
 
 // --- ANIMATIONS ---
 const roll = keyframes`
@@ -537,42 +541,16 @@ export default function MarketingPage() {
         </Pill>
 
         <HeroTitle>
-          The Log Engine for <br />
-          <span
-            style={{
-              display: "inline-flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <RollingContainer>
-              <RollList>
-                <RollItem>Hyperscale Ingestion.</RollItem>
-                <RollItem>HFT Systems.</RollItem>
-                <RollItem>Realtime Debugging.</RollItem>
-                <RollItem>Hyperscale Ingestion.</RollItem>
-              </RollList>
-            </RollingContainer>
-          </span>
+          <HeroRollingText />
         </HeroTitle>
 
         <Subtitle>
           Built by developers, for
-          <span
-            style={{
-              position: "relative",
-              display: "inline-block",
-              margin: "0 6px",
-              color: "#fff",
-              fontWeight: "bold",
-            }}
-          >
-            developers
-            <PaintedUnderlineSVG viewBox="0 0 200 9" preserveAspectRatio="none">
-              <path d="M2.00025 6.99997C25.7201 5.2046 82.5279 -0.963287 197.999 2.00003" />
-            </PaintedUnderlineSVG>
-          </span>
-          .<UPS>104,000+ Logs/Second. Single Node.</UPS>
+          <HandDrawnHighlight> developers. </HandDrawnHighlight>
+          <UPS>
+            <span style={{ color: "#2ea043", fontWeight: 800 }}>104,000+</span>{" "}
+            Logs/Second. Single Node.
+          </UPS>
         </Subtitle>
 
         <ButtonGroup>
@@ -596,7 +574,7 @@ export default function MarketingPage() {
             }}
           />
           <Scanline />
-          {/* Overlay to fade bottom into section */}
+
           <div
             style={{
               position: "absolute",
@@ -607,6 +585,9 @@ export default function MarketingPage() {
           />
         </VisualContainer>
       </HeroSection>
+
+      {/* Becnchmark */}
+      <BenchmarkSection />
 
       {/* 2. FEATURES (BENTO) */}
       <FeatureSection id="features">
