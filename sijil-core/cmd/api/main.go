@@ -57,7 +57,7 @@ func main() {
 	}
 
 	// -- Retention policy
-	go database.RunRetentionPolicy(ctx, db)
+	go observability.RunRetentionPolicy(ctx, db)
 
 	// -- WebSocket --
 	h := hub.NewHub()

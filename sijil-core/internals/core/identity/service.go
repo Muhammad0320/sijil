@@ -46,8 +46,8 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, *U
 	}
 
 	go func() {
-
-		link := fmt.Sprintf("https://sijil.io/verify?token=%s", rawToken)
+		baseURL := utils.GetAppURL()
+		link := fmt.Sprintf("%s/verify?token=%s", baseURL, rawToken)
 		html := fmt.Sprintf(`
 			<h2>Welcome to Sijil, %s!</h2>
 			<p>Please verify your email to activate your account.</p>
@@ -106,8 +106,8 @@ func (s *Service) ForgotPassword(ctx context.Context, email string) error {
 	}
 
 	go func() {
-
-		link := fmt.Sprintf("https://sijil.dev/reset-password?token=%s", rawToken)
+		baseURL := utils.GetAppURL()
+		link := fmt.Sprintf("%s/reset-password?token=%s", baseURL, rawToken)
 		html := fmt.Sprintf(`
 			<h2>Reset your Password</h2>
 			<p>Someone requested a password reset for your Sijil account.</p>

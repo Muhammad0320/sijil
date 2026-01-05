@@ -5,6 +5,6 @@ type Plan struct {
 	Name          string
 	MaxDailyLogs  int
 	RetentionDays int
-	MaxMemebers   int
+	MaxMembers    int
 	MaxProjects   int
 }

@@ -182,7 +182,7 @@ func (r *postgresRepository) GetUserPlan(ctx context.Context, userID int) (*doma
 		FROM users u
 		JOIN plans p ON u.plan_id = p.id
 		WHERE u.id = $1
-	`, userID).Scan(&p.ID, &p.Name, &p.MaxProjects, &p.MaxMemebers, &p.MaxDailyLogs, &p.RetentionDays)
+	`, userID).Scan(&p.ID, &p.Name, &p.MaxProjects, &p.MaxMembers, &p.MaxDailyLogs, &p.RetentionDays)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get plan for user %d: %w", userID, err)
