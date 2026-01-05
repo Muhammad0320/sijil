@@ -5,14 +5,11 @@ import Link from "next/link";
 import { BorderBeamButton } from "@/components/ui/borderBeamButton";
 import Footer from "@/components/layout/Footer";
 
-import Image from "next/image";
-import logo from "../../../public/logo.png";
-
 const Nav = styled.nav`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 48px;
+  padding: 0 48px;
   position: fixed;
   top: 0;
   width: 100%;
@@ -20,34 +17,18 @@ const Nav = styled.nav`
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(5, 5, 5, 0.6);
-  height: 80px; /* Explicit height */
-`;
+  height: 80px;
+  transition: all 0.2s ease-in-out;
 
-const MainContent = styled.main`
-  padding-top: 80px; /* MATCH THE HEADER HEIGHT */
-  background-color: #050505;
-  min-height: 100vh;
-`;
-
-const NavLinks = styled.div`
-  display: flex;
-  gap: 32px;
-
-  a {
-    font-size: 14px;
-    font-weight: 500;
-    color: #8b949e;
-    transition: color 0.2s;
-    &:hover {
-      color: #fff;
-    }
+  @media (max-width: 768px) {
+    padding: 0 24px;
   }
 `;
 
-const AuthButtons = styled.div`
-  display: flex;
-  gap: 16px;
-  align-items: center;
+const MainContent = styled.main`
+  padding-top: 80px;
+  background-color: #050505;
+  min-height: 100vh;
 `;
 
 const LogoContainer = styled(Link)`
@@ -60,14 +41,57 @@ const LogoContainer = styled(Link)`
 const LogoIcon = styled.div`
   width: 32px;
   height: 32px;
+  background: #58a6ff;
+  border-radius: 6px;
   position: relative;
+  overflow: hidden;
+
+  /* Abstract shutter/speed lines */
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200%;
+    height: 4px;
+    background: #000;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
 `;
 
 const BrandName = styled.span`
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -1px;
   color: #fff;
-  letter-spacing: -0.5px;
+`;
+
+const NavLinks = styled.div`
+  display: flex;
+  gap: 32px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+
+  a {
+    font-size: 14px;
+    font-weight: 500;
+    color: #8b949e;
+    transition: color 0.2s;
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+const AuthButtons = styled.div`
+  display: flex;
+  gap: 16px;
+  align-items: center;
 `;
 
 export default function MarketingLayout({
@@ -79,15 +103,15 @@ export default function MarketingLayout({
     <div style={{ backgroundColor: "#050505", minHeight: "100vh" }}>
       <Nav>
         <LogoContainer href="/">
-          <LogoIcon>
-            <Image src={logo} alt="sijil logo" />
-          </LogoIcon>
+          <LogoIcon />
           <BrandName>Sijil</BrandName>
         </LogoContainer>
 
-        {/* Hide links on mobile for now to prevent clutter */}
-        <NavLinks style={{ display: "none" }}>
-          {/* You can implement a proper drawer here later if needed */}
+        <NavLinks>
+          <Link href="#features">Features</Link>
+          <Link href="#performance">Benchmarks</Link>
+          <Link href="#pricing">Pricing</Link>
+          <Link href="/docs">Docs</Link>
         </NavLinks>
 
         <AuthButtons>
