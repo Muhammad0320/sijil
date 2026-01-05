@@ -115,11 +115,24 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 		protected.GET("logs/ws", s.handleWsLogic)
 	}
 
+	// Webhooks
+	apiv1.POST("/webhooks/paystack", s.handlePayStackWebhook)
+	apiv1.POST("/webhooks/lemonsqueezy", s.handleLemonSqueezyWebhook)
+
 	// For the Loading Dock (Agent route)
 	apiv1.POST("/logs", s.apiKeyAuthMiddleware(), s.observabilityHandler.Ingest)
 
+	adminUser := os.Getenv("ADMIN_USER")
+	adminPass := os.Getenv("ADMIN_PASS")
+	if adminUser == "" {
+		adminUser = "admin"
+	}
+	if adminPass == "" {
+		adminPass = "password"
+	}
+
 	adminGroup := router.Group("/debug", gin.BasicAuth(gin.Accounts{
-		os.Getenv("ADMIN_USER"): os.Getenv("ADMIN_PASS"),
+		adminUser: adminPass,
 	}))
 	adminGroup.GET("/vars", gin.WrapH(expvar.Handler()))
 }

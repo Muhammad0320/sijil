@@ -96,9 +96,9 @@ func (s *Service) AddMember(ctx context.Context, userID int, projectID int, req 
 		return ErrForbidden
 	}
 
-	if plan.MaxMemebers != -1 {
+	if plan.MaxMembers != -1 {
 		currentMembers, _ := s.repo.CountMembers(ctx, projectID)
-		if currentMembers >= plan.MaxMemebers {
+		if currentMembers >= plan.MaxMembers {
 			return ErrLimitReached
 		}
 	}
@@ -107,14 +107,15 @@ func (s *Service) AddMember(ctx context.Context, userID int, projectID int, req 
 		subject := fmt.Sprintf("Invitation to join %s on Sijil", project.Name)
 
 		// Simple HTML template (We can upgrade this to React Email later)
+		baseURL := utils.GetAppURL()
 		body := fmt.Sprintf(`
             <div style="font-family: sans-serif; padding: 20px;">
                 <h2>You've been invited!</h2>
                 <p>You have been added to the project <strong>%s</strong> as a <strong>%s</strong>.</p>
                 <p>Click below to access the dashboard:</p>
-                <a href="https://sijil.io/dashboard" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Open Dashboard</a>
+                <a href="%s/dashboard" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Open Dashboard</a>
             </div>
-        `, project.Name, req.Role)
+        `, project.Name, req.Role, baseURL)
 
 		err = s.mailer(req.Email, subject, body)
 		if err != nil {

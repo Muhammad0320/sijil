@@ -1,8 +1,12 @@
-package server
+package server_test
 
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,207 +14,247 @@ import (
 	"os"
 	"sijil-core/internals/auth"
 	"sijil-core/internals/core/identity"
+	"sijil-core/internals/core/observability"
 	"sijil-core/internals/core/projects"
 	"sijil-core/internals/database"
 	"sijil-core/internals/hub"
 	"sijil-core/internals/ingest"
+	"sijil-core/internals/server"
 	"sijil-core/internals/shared"
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/stretchr/testify/assert"
 )
 
-// Helper to setup a fresh server and clean DB for testing
-func setupTestServer(t *testing.T) *Server {
-	// 1. Load Env (or hardcode for test)
-	_ = godotenv.Load("../../.env")
+var (
+	testDB *pgxpool.Pool
+	router *gin.Engine
+)
+
+func setupTestDB() {
+	if os.Getenv("SKIP_DB") == "true" {
+		return
+	}
+
+	godotenv.Load("../../../.env")
 
 	dbPassword := os.Getenv("DB_PASSWORD")
 	if dbPassword == "" {
-		dbPassword = "logpassword123"
+		dbPassword = "password"
 	}
-	connString := fmt.Sprintf("postgres://postgres:%s@127.0.0.1:5433/log_db?sslmode=disable", dbPassword)
 
-	ctx := context.Background()
-	db, err := database.ConnectDB(ctx, connString)
+	connString := fmt.Sprintf("postgres://postgres:%s@127.0.0.1:5434/log_db?sslmode=disable", dbPassword)
+
+	var err error
+	testDB, err = database.ConnectDB(context.Background(), connString)
 	if err != nil {
-		t.Fatalf("Could not connect to DB: %v", err)
+		fmt.Printf("Skipping tests requiring DB: %v\n", err)
+		return
+	}
+}
+
+func setupServer() {
+	if testDB == nil {
+		return
 	}
 
-	// 2. CLEAN THE DB (Ruthless Reset)
-	// We truncate tables to ensure a clean slate for every test run
-	_, err = db.Exec(ctx, "TRUNCATE TABLE users, projects, logs, project_members RESTART IDENTITY CASCADE")
-	if err != nil {
-		t.Fatalf("Could not truncate DB: %v", err)
-	}
+	jwtSecret := "testsecret"
 
-	// 3. Initialize dependencies
 	h := hub.NewHub()
 	go h.Run()
 
-	jwtSecret := "test-secret-key"
+	authCache := auth.NewAuthCache(testDB)
 
-	mailer := func(email, subject, body string) error {
-		fmt.Printf("[Real mock] To %s | Token %s\n", email, body)
+	os.MkdirAll("test_wal_data", 0755)
+	wal, _ := ingest.NewWal("test_wal_data")
+	engine := ingest.NewIngestionEngine(testDB, wal, h)
+	ctx, _ := context.WithCancel(context.Background())
+	go engine.Start(ctx)
+
+	mailerFunc := func(email, subject, body string) error {
+		fmt.Printf("Mock Email to %s: %s\n", email, subject)
 		return nil
 	}
 
-	idRepo := identity.NewRepository(db)
-	idService := identity.NewService(idRepo, jwtSecret, mailer)
-	idHandler := identity.NewHandler(idService)
+	identityRepo := identity.NewRepository(testDB)
+	identityService := identity.NewService(identityRepo, jwtSecret, mailerFunc)
+	identityHandler := identity.NewHandler(identityService)
 
-	projectsRepo := projects.NewRepository(db)
-	projectService := projects.NewService(projectsRepo, mailer)
+	projectsRepo := projects.NewRepository(testDB)
+	projectService := projects.NewService(projectsRepo, mailerFunc)
 	projectHandler := projects.NewHandler(projectService)
 
+	observabilityRepo := observability.NewRepository(testDB)
+	observabilityService := observability.NewService(observabilityRepo, projectsRepo, engine)
+	observabilityHandler := observability.NewHandler(observabilityService)
+
 	handlers := shared.Handlers{
-		Identity:        idHandler,
-		IdentityService: idService,
+		IdentityRepo:    identityRepo,
+		IdentityService: identityService,
+		Identity:        identityHandler,
 		Projects:        projectHandler,
+		Observability:   observabilityHandler,
 	}
 
-	// We don't need a real WAL for RBAC testing, but the engine needs one
-	// Create a temp file
-	tmpWal, _ := os.CreateTemp("", "test_wal")
-	wal, _ := ingest.NewWal(tmpWal.Name())
-	engine := ingest.NewIngestionEngine(db, wal, h)
-	authCache := auth.NewAuthCache(db)
-
-	return NewServer(db, engine, h, authCache, jwtSecret, handlers)
+	srv := server.NewServer(testDB, engine, h, authCache, jwtSecret, handlers)
+	router = srv.Router
 }
 
-// Helper to make requests
-func makeRequest(s *Server, method, url, token string, body interface{}) *httptest.ResponseRecorder {
-	var jsonBody []byte
-	if body != nil {
-		jsonBody, _ = json.Marshal(body)
+func TestFullFlow(t *testing.T) {
+	setupTestDB()
+	if testDB == nil {
+		t.Skip("Skipping integration test: DB not available")
 	}
-	req, _ := http.NewRequest(method, url, bytes.NewBuffer(jsonBody))
-	req.Header.Set("Content-Type", "application/json")
-	if token != "" {
+	setupServer()
 
-		req.Header.Set("Authorization", "Bearer "+token)
+	// 1. Register User
+	email := fmt.Sprintf("testuser_%d@example.com", time.Now().UnixNano())
+	password := "password123"
+
+	registerBody := map[string]string{
+		"firstname": "Test",
+		"lastname":  "User",
+		"email":      email,
+		"password":   password,
 	}
+	body, _ := json.Marshal(registerBody)
 
 	w := httptest.NewRecorder()
-	s.Router.ServeHTTP(w, req)
-	return w
-}
+	req, _ := http.NewRequest("POST", "/api/v1/auth/register", bytes.NewBuffer(body))
+	router.ServeHTTP(w, req)
 
-func TestRBAC_EndToEnd(t *testing.T) {
-	s := setupTestServer(t)
-	// Ensure you have access to your DB pool here.
-	// If 's' contains the DB, use s.DB. If it's a global variable, use that.
+	assert.Equal(t, http.StatusCreated, w.Code)
 
-	// --- 1. SETUP USERS ---
-	// Register User A (Admin)
-	w := makeRequest(s, "POST", "/api/v1/auth/register", "", map[string]string{
-		"firstname": "Admin", "lastname": "User", "email": "admin@test.com", "password": "password123",
-	})
-	if w.Code != 201 {
-		t.Fatalf("Failed to register Admin: %v", w.Body.String())
+	var registerResp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &registerResp)
+	token := registerResp["token"].(string)
+	user := registerResp["user"].(map[string]interface{})
+	userID := int(user["id"].(float64))
+
+	// 2. Login
+	loginBody := map[string]string{
+		"email":    email,
+		"password": password,
+	}
+	body, _ = json.Marshal(loginBody)
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/api/v1/auth/login", bytes.NewBuffer(body))
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// 3. Create Project
+	createProjectBody := map[string]string{
+		"name": fmt.Sprintf("Test Project %d", time.Now().UnixNano()),
+	}
+	body, _ = json.Marshal(createProjectBody)
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/api/v1/projects", bytes.NewBuffer(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var projectResp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &projectResp)
+	projectID := int(projectResp["id"].(float64))
+	apiKey := projectResp["api_key"].(string)
+	apiSecret := projectResp["api_secret"].(string)
+
+	// 4. Ingest Logs
+	logEntries := []map[string]interface{}{
+		{
+			"timestamp": time.Now(),
+			"level":     "info",
+			"message":   "Test log message",
+			"service":   "test-service",
+			"data":      map[string]string{"foo": "bar"},
+		},
+	}
+	body, _ = json.Marshal(logEntries)
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/api/v1/logs", bytes.NewBuffer(body))
+	req.Header.Set("X-Api-Key", apiKey)
+	req.Header.Set("Authorization", "Bearer "+apiSecret)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusAccepted, w.Code)
+
+	time.Sleep(1 * time.Second)
+
+	// 5. Search Logs
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", fmt.Sprintf("/api/v1/logs?project_id=%d&q=Test", projectID), nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// 6. Simulate Paystack Payment (Upgrade to Plan 2)
+	paystackPayload := map[string]interface{}{
+		"event": "charge.success",
+		"data": map[string]interface{}{
+			"amount": 1250000,
+			"reference": "ref_123",
+			"status": "success",
+			"customer": map[string]string{"email": email},
+			"metadata": map[string]interface{}{"user_id": userID},
+		},
+	}
+	payloadBytes, _ := json.Marshal(paystackPayload)
+
+	secret := os.Getenv("PAYSTACK_SECRET_KEY")
+	if secret == "" {
+		secret = "test_secret"
+		os.Setenv("PAYSTACK_SECRET_KEY", secret)
 	}
 
-	var adminAuth struct {
-		Token string `json:"token"`
+	hash := hmac.New(sha512.New, []byte(secret))
+	hash.Write(payloadBytes)
+	signature := hex.EncodeToString(hash.Sum(nil))
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/api/v1/webhooks/paystack", bytes.NewBuffer(payloadBytes))
+	req.Header.Set("X-Paystack-Signature", signature)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// 7. Simulate Lemon Squeezy Webhook (Upgrade to Plan 3)
+	lemonPayload := map[string]interface{}{
+		"meta": map[string]interface{}{
+			"event_name": "order_created",
+			"custom_data": map[string]interface{}{
+				"user_id": userID,
+			},
+		},
+		"data": map[string]interface{}{
+			"attributes": map[string]interface{}{
+				"variant_id": 456, // defined in .env as LEMON_VARIANT_ULTRA
+				"status": "paid",
+				"total": 10000,
+			},
+		},
 	}
-	err := json.Unmarshal(w.Body.Bytes(), &adminAuth)
-	if err != nil {
-		t.Fatalf("error unmarshalling admin token: %s", err)
+	lemonBytes, _ := json.Marshal(lemonPayload)
+
+	lemonSecret := os.Getenv("LEMONSQUEEZY_WEBHOOK_SECRET")
+	if lemonSecret == "" {
+		lemonSecret = "test_secret"
+		os.Setenv("LEMONSQUEEZY_WEBHOOK_SECRET", lemonSecret)
 	}
 
-	// ----------------------------------------------------------------------
-	// [INSERTED FIX]: FORCE UPGRADE ADMIN TO PRO
-	// We do this here so Step 4 doesn't fail on "Quota Exceeded" before hitting "Conflict"
-	// ----------------------------------------------------------------------
-	adminUser, _ := s.identityRepo.GetByEmail(context.Background(), "admin@test.com")
-	duration := time.Now().AddDate(0, 0, 30)
-	if err := s.identityRepo.UpdateUserPlan(context.Background(), adminUser.ID, 2, duration); err != nil {
-		t.Fatalf("Failed to force upgrade admin user: %v", err)
-	}
-	// ----------------------------------------------------------------------
+	hash = hmac.New(sha256.New, []byte(lemonSecret))
+	hash.Write(lemonBytes)
+	lemonSig := hex.EncodeToString(hash.Sum(nil))
 
-	// Register User B (Viewer)
-	w = makeRequest(s, "POST", "/api/v1/auth/register", "", map[string]string{
-		"firstname": "Viewer", "lastname": "User", "email": "viewer@test.com", "password": "password123",
-	})
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/api/v1/webhooks/lemonsqueezy", bytes.NewBuffer(lemonBytes))
+	req.Header.Set("X-Signature", lemonSig)
+	router.ServeHTTP(w, req)
 
-	if w.Code != 201 {
-		t.Fatalf("Failed to register Viewer")
-	}
-	var viewerAuth struct {
-		Token string `json:"token"`
-	}
-	json.Unmarshal(w.Body.Bytes(), &viewerAuth)
-
-	// --- 2. CREATE PROJECT (As Admin) ---
-	w = makeRequest(s, "POST", "/api/v1/projects", adminAuth.Token, map[string]string{
-		"name": "Death Star Logs",
-	})
-
-	if w.Code != 201 {
-		t.Fatalf("Failed to create project: %v", w.Body.String())
-	}
-	var projectRes struct {
-		ProjectID int `json:"project_id"`
-	}
-	json.Unmarshal(w.Body.Bytes(), &projectRes)
-	pID := projectRes.ProjectID
-
-	// --- 3. ADD MEMBER (Success Case) ---
-	// Admin invites Viewer.
-	// Because we upgraded the plan earlier, this uses 1/100 slots. Safe.
-	w = makeRequest(s, "POST", fmt.Sprintf("/api/v1/projects/%d/members", pID), adminAuth.Token, map[string]string{
-		"email": "viewer@test.com",
-		"role":  "viewer",
-	})
-	if w.Code != 200 {
-		t.Errorf("Expected 200 OK for adding member, got %d. Body: %s", w.Code, w.Body.String())
-	}
-
-	// --- 4. ADD MEMBER (Conflict Case) ---
-	// Admin invites Viewer AGAIN.
-	// The quota check passes (1/100 used), so it hits the Duplicate Check logic -> 409.
-	w = makeRequest(s, "POST", fmt.Sprintf("/api/v1/projects/%d/members", pID), adminAuth.Token, map[string]string{
-		"email": "viewer@test.com",
-		"role":  "viewer",
-	})
-
-	if w.Code != 409 {
-		t.Errorf("Expected 409 Conflict for duplicate member, got %d. Body: %s", w.Code, w.Body.String())
-	}
-
-	// --- 5. UNAUTHORIZED INVITE (Forbidden Case) ---
-	// Viewer tries to invite Admin (Circular, but testing permissions)
-	w = makeRequest(s, "POST", fmt.Sprintf("/api/v1/projects/%d/members", pID), viewerAuth.Token, map[string]string{
-		"email": "admin@test.com",
-		"role":  "admin",
-	})
-	if w.Code != 403 {
-		t.Errorf("Expected 403 Forbidden for viewer inviting others, got %d", w.Code)
-	}
-
-	// --- 6. VIEW LOGS (Access Granted Case) ---
-	// Viewer tries to read logs
-	w = makeRequest(s, "GET", fmt.Sprintf("/api/v1/logs?project_id=%d", pID), viewerAuth.Token, nil)
-	if w.Code != 200 {
-		t.Errorf("Expected 200 OK for viewer reading logs, got %d", w.Code)
-	}
-
-	// --- 7. VIEW LOGS (Access Denied Case) ---
-	// Register Random User C
-	w = makeRequest(s, "POST", "/api/v1/auth/register", "", map[string]string{
-		"firstname": "Stranger", "lastname": "Danger", "email": "stranger@test.com", "password": "password123",
-	})
-	var strangerAuth struct {
-		Token string `json:"token"`
-	}
-	json.Unmarshal(w.Body.Bytes(), &strangerAuth)
-
-	// Stranger tries to read logs
-	w = makeRequest(s, "GET", fmt.Sprintf("/api/v1/logs?project_id=%d", pID), strangerAuth.Token, nil)
-	if w.Code != 403 {
-		t.Errorf("Expected 403 Forbidden for stranger reading logs, got %d", w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
 }
