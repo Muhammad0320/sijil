@@ -732,9 +732,9 @@ export default function MarketingPage() {
           </TextBlock>
           <VisualBlock>
             {/* PLACEHOLDER FOR NANO BANANA "SDK" IMAGE */}
-            <div style={{ color: "#30363d", fontWeight: 800 }}>
-              <Image src={sdkImage} alt="SDKs" width={300} height={200} />
-            </div>
+            <Image src={sdkImage} alt="SDKs" width={300} height={200} />
+
+            <div style={{ color: "#30363d", fontWeight: 800 }}></div>
           </VisualBlock>
         </SplitLayout>
       </CodeSection>
