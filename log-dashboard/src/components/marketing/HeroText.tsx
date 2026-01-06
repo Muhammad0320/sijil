@@ -59,7 +59,7 @@ const Underline = styled.svg`
     stroke-dasharray: 400;
     stroke-dashoffset: 400;
     fill: none;
-    opacity: 0.85; /* More visible */
+    opacity: 0.9; /* More visible */
     animation: draw 1s ease-out forwards 0.5s;
   }
 
