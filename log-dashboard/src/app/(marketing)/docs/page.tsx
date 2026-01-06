@@ -486,8 +486,11 @@ export default function DocsPage() {
                 {lang === "js" && (
                   <>
                     <div>
-                      <K>import</K> {"{"} <V>SijilLogger</V> {"}"} <K>from</K>{" "}
-                      <S>&rquo;@sijil/node&rquo;</S>;
+                      <K>import</K> {"{"} <V>SijilLogger</V> {"}"} <K>from </K>
+                      <S>
+                        {'"'}@sijil/node{'"'}
+                      </S>
+                      ;
                     </div>
                     <br />
                     <div>
@@ -495,22 +498,39 @@ export default function DocsPage() {
                       ({"{"}
                     </div>
                     <div style={{ paddingLeft: 20 }}>
-                      <P>apiKey:</P> <S>&rquo;{keyDisplay}&rquo;</S>,
+                      <P>apiKey:</P>
+                      <S>
+                        {'"'}
+                        {keyDisplay}
+                        {'"'}
+                      </S>
+                      ,
                     </div>
                     <div style={{ paddingLeft: 20 }}>
-                      <P>apiSecret:</P> <S>&rquo;{secretDisplay}&rquo;</S>
+                      <P>apiSecret:</P>
+                      <S>
+                        {'"'}
+                        {secretDisplay}
+                        {'"'}{" "}
+                      </S>
                     </div>
                     <div>{"}"});</div>
                     <br />
                     <div>
                       <K>await</K> <V>logger</V>.<F>info</F>(
-                      <S>&rquo;Payment processed&rquo;</S>, {"{"}
+                      <S>
+                        {'"'}Payment processed{'"'}
+                      </S>
+                      , {"{"}
                     </div>
                     <div style={{ paddingLeft: 20 }}>
                       <P>amount:</P> <V>000</V>,
                     </div>
                     <div style={{ paddingLeft: 20 }}>
-                      <P>currency:</P> <S>&rquo;NGN&rquo;</S>
+                      <P>currency:</P>
+                      <S>
+                        {'"'}NGN{'"'}
+                      </S>
                     </div>
                     <div>{"}"});</div>
                   </>
@@ -519,29 +539,49 @@ export default function DocsPage() {
                 {lang === "py" && (
                   <>
                     <div>
-                      <K>from</K> sijil <K>import</K> SijilLogger
+                      <K>from </K> sijil <K>import</K> SijilLogger
                     </div>
                     <br />
                     <div>
                       <V>logger</V> = <F>SijilLogger</F>(
                     </div>
                     <div style={{ paddingLeft: 20 }}>
-                      <P>api_key</P>=<S>&rquo;{keyDisplay}&rquo;</S>,
+                      <P>api_key</P>=
+                      <S>
+                        {'"'} {keyDisplay} {'"'}
+                      </S>
+                      ,
                     </div>
                     <div style={{ paddingLeft: 20 }}>
-                      <P>api_secret</P>=<S>&rquo;{secretDisplay}&rquo;</S>
+                      <P>api_secret</P>=
+                      <S>
+                        {'"'} {secretDisplay} {'"'}
+                      </S>
                     </div>
                     <div>)</div>
                     <br />
                     <div>
                       <V>logger</V>.<F>info</F>(
-                      <S>&rquo;Payment processed&rquo;</S>, {"{"}
+                      <S>
+                        {'"'} Payment processed {'"'}
+                      </S>
+                      , {"{"}
                     </div>
                     <div style={{ paddingLeft: 20 }}>
-                      <S>&rquo;amount&rquo;</S>: <V>5000</V>,
+                      <S>
+                        {" "}
+                        {'"'} amount {'"'}{" "}
+                      </S>
+                      : <V>5000</V>,
                     </div>
                     <div style={{ paddingLeft: 20 }}>
-                      <S>&rquo;currency&rquo;</S>: <S>&rquo;NGN&rquo;</S>
+                      <S>
+                        {'"'} currency {'"'}
+                      </S>
+                      :
+                      <S>
+                        {'"'} NGN {'"'}
+                      </S>
                     </div>
                     <div>{"}"})</div>
                   </>
@@ -553,7 +593,10 @@ export default function DocsPage() {
                       <K>package</K> main
                     </div>
                     <div>
-                      <K>import</K> <S>&rquo;github.com/sijil/go-sdk&rquo;</S>
+                      <K>import</K>
+                      <S>
+                        {'"'} github.com/sijil/go-sdk {'"'}
+                      </S>
                     </div>
                     <br />
                     <div>
@@ -563,24 +606,44 @@ export default function DocsPage() {
                       <V>logger</V> := sijil.<F>New</F>(sijil.Config{"{"}
                     </div>
                     <div style={{ paddingLeft: 40 }}>
-                      <P>APIKey:</P> <S>&rquo;{keyDisplay}&rquo;</S>,
+                      <P>APIKey:</P>
+                      <S>
+                        {'"'} {keyDisplay} {'"'}
+                      </S>
+                      ,
                     </div>
                     <div style={{ paddingLeft: 40 }}>
-                      <P>APISecret:</P> <S>&rquo;{secretDisplay}&rquo;</S>,
+                      <P>APISecret:</P>
+                      <S>
+                        {'"'} {secretDisplay} {'"'}
+                      </S>
+                      ,
                     </div>
                     <div style={{ paddingLeft: 20 }}>{"}"})</div>
                     <br />
                     <div style={{ paddingLeft: 20 }}>
                       <V>logger</V>.<F>Info</F>(
-                      <S>&rquo;Payment processed&rquo;</S>, <K>map</K>[
-                      <K>string</K>]<K>interface</K>
+                      <S>
+                        {'"'} Payment processed {'"'}
+                      </S>
+                      , <K>map</K>[<K>string</K>]<K>interface</K>
                       {"{"}
                     </div>
                     <div style={{ paddingLeft: 40 }}>
-                      <S>&rquo;amount&rquo;</S>: <V>5000</V>,
+                      <S>
+                        {'"'} amount {'"'}
+                      </S>
+                      : <V>5000</V>,
                     </div>
                     <div style={{ paddingLeft: 40 }}>
-                      <S>&rquo;currency&rquo;</S>: <S>&rquo;NGN&rquo;</S>,
+                      <S>
+                        {'"'} currency {'"'}
+                      </S>
+                      :
+                      <S>
+                        {'"'} NGN {'"'}
+                      </S>
+                      ,
                     </div>
                     <div style={{ paddingLeft: 20 }}>{"}"})</div>
                     <div>{"}"}</div>
@@ -628,7 +691,7 @@ export default function DocsPage() {
                   </LogLine>
                 ))}
                 <div style={{ marginTop: "auto", paddingTop: 8 }}>
-                  <span style={{ color: "#2ea043" }}>➜</span>{" "}
+                  <span style={{ color: "#2ea043" }}>➜</span>
                   <span style={{ color: "#58a6ff" }}>~</span> <Cursor />
                 </div>
               </TerminalWindow>
