@@ -6,12 +6,22 @@ import styled from "styled-components";
 const Container = styled.div`
   display: inline-flex;
   flex-direction: column;
-  height: 1.1em; /* Visible Window */
+  height: 1.1em;
   line-height: 1.1em;
   overflow: hidden;
+  vertical-align: bottom;
+
+  /* FIX: Default to left for desktop inline flow */
   text-align: left;
   margin-left: 12px;
-  vertical-align: bottom;
+
+  /* FIX: On Mobile/Split screen, remove margin and center */
+  text-align: center;
+  @media (max-width: 768px) {
+    margin-left: 0;
+    width: 100%; /* Take full width to force centering */
+    align-items: center; /* Center the flex children */
+  }
 `;
 
 const SlideTrack = styled.div<{ $offset: number; $animate: boolean }>`
