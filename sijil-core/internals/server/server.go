@@ -117,7 +117,7 @@ func (s *Server) registerRoutes(router *gin.Engine) {
 
 	// Webhooks
 	apiv1.POST("/webhooks/paystack", s.handlePayStackWebhook)
-	apiv1.POST("/webhooks/lemonsqueezy", s.handleLemonSqueezyWebhook)
+	apiv1.POST("/webhooks/lemonsqueezy", s.handleLemonWebhook)
 
 	// For the Loading Dock (Agent route)
 	apiv1.POST("/logs", s.apiKeyAuthMiddleware(), s.observabilityHandler.Ingest)
