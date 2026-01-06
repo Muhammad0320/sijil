@@ -24,6 +24,8 @@ const Item = styled.div`
   height: 1.1em;
   color: #58a6ff;
   font-weight: 800;
+  align-self: center;
+  align-items: center;
   white-space: nowrap;
   /* Cyber Glow */
   text-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
