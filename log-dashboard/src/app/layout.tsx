@@ -3,6 +3,7 @@ import { Fira_Code, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { ToastProvider } from "@/providers/ToastProvider";
+import CookieBanner from "@/components/layout/CookieBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${firaCode.variable} `}
       >
         <ToastProvider>{children}</ToastProvider>
+        <CookieBanner />
       </body>
     </html>
   );
