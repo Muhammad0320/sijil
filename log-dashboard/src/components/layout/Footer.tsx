@@ -128,6 +128,7 @@ const StatusBadge = styled.div`
   padding: 4px 8px;
   border-radius: 12px;
   border: 1px solid rgba(46, 204, 113, 0.2);
+  width: fit-content;
 `;
 
 export default function Footer() {
