@@ -3,106 +3,108 @@
 import React from "react";
 import styled, { keyframes } from "styled-components";
 
-const roll = keyframes`
-  0% { transform: translateY(0); }
-  25% { transform: translateY(-100%); }
-  50% { transform: translateY(-200%); }
-  75% { transform: translateY(-300%); }
-  100% { transform: translateY(0); }
+// --- 1. THE ROLLING TEXT ANIMATION ---
+// The math: 3 items. Total 100%.
+// 0% -> 25%: Stay at 1
+// 25% -> 33%: Move to 2
+// 33% -> 58%: Stay at 2
+// 58% -> 66%: Move to 3
+// 66% -> 91%: Stay at 3
+// 91% -> 100%: Move back to 1
+const snapRoll = keyframes`
+  0%, 25% { transform: translateY(0); }
+  33%, 58% { transform: translateY(-100%); }
+  66%, 91% { transform: translateY(-200%); }
+  100% { transform: translateY(0); } /* Instant reset or slide depending on items */
 `;
 
-// Wrapper to keep "The Log Engine for" and the Rolling text on one line
 const Wrapper = styled.span`
   display: inline-flex;
-  align-items: center; /* Vertical center alignment */
-  justify-content: center;
-  flex-wrap: wrap; /* Allow wrapping on small screens */
-  gap: 12px; /* Space between "for" and the rolling words */
-`;
-
-const Container = styled.div`
-  display: inline-block;
-  height: 1.2em; /* Locked height matches font line-height */
-  line-height: 1.2em;
+  flex-direction: column;
+  height: 1.1em; /* Perfectly matches line-height */
   overflow: hidden;
-  vertical-align: bottom;
+  vertical-align: bottom; /* Aligns with the baseline of "The Log Engine for" */
   text-align: left;
+  margin-left: 12px;
 `;
 
-const RollList = styled.ul`
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  animation: ${roll} 8s cubic-bezier(0.23, 1, 0.32, 1) infinite;
-`;
-
-const RollItem = styled.li`
-  height: 1.2em;
-  line-height: 1.2em;
+const RollList = styled.span`
   display: block;
+  animation: ${snapRoll} 6s cubic-bezier(0.5, 0, 0.2, 1) infinite;
+`;
+
+const RollItem = styled.span`
+  display: block;
+  height: 1.1em;
+  line-height: 1.1em;
   color: #58a6ff;
   font-weight: 800;
-`;
-
-const Underline = styled.svg`
-  position: absolute;
-  bottom: -8px; /* Moved closer */
-  left: 0;
-  width: 100%;
-  height: 12px;
-  z-index: -1;
-
-  path {
-    stroke: #1f6feb; /* Darker, Deeper Blue */
-    stroke-width: 4; /* Thinner (was 8) */
-    stroke-linecap: round;
-    stroke-dasharray: 400;
-    stroke-dashoffset: 400;
-    fill: none;
-    opacity: 0.9; /* More visible */
-    animation: draw 1s ease-out forwards 0.5s;
-  }
-
-  @keyframes draw {
-    to {
-      stroke-dashoffset: 0;
-    }
-  }
+  /* Cyberpunk text shadow for "Luxury" feel */
+  text-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
 `;
 
 export default function HeroRollingText() {
   return (
     <Wrapper>
-      The Log Engine for
-      <Container>
-        <RollList>
-          <RollItem>Hyperscale Ingestion.</RollItem>
-          <RollItem>HFT Systems.</RollItem>
-          <RollItem>Realtime Debugging.</RollItem>
-          <RollItem>Hyperscale Ingestion.</RollItem>
-        </RollList>
-      </Container>
+      <RollList>
+        <RollItem>Hyperscale Ingestion.</RollItem>
+        <RollItem>HFT Systems.</RollItem>
+        <RollItem>Realtime Debugging.</RollItem>
+        {/* Duplicate first item for seamless loop if needed, 
+            but for 3-step snap, we usually just snap back to 0. 
+            Let's keep 3 distinct items for simplicity. */}
+      </RollList>
     </Wrapper>
   );
 }
+
+// --- 2. THE CYBER HIGHLIGHTER (Interactive) ---
+
+const squiggly = keyframes`
+  0% { background-position: 0 0; }
+  100% { background-position: 100% 0; }
+`;
+
+const HighlightSpan = styled.span`
+  position: relative;
+  z-index: 1;
+  font-weight: 800;
+  cursor: pointer;
+  color: #fff;
+  white-space: nowrap;
+  padding: 0 4px;
+
+  /* The "Underline" is now a pseudo-element highlighter */
+  &::before {
+    content: "";
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    width: 100%;
+    height: 30%; /* Only covers bottom third like a marker */
+    background: #1f6feb; /* Deep Blue */
+    z-index: -1;
+    transform: skew(-12deg) rotate(-2deg);
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    opacity: 0.8;
+  }
+
+  /* Hover Effect: Expands and Glows */
+  &:hover::before {
+    height: 90%; /* Covers full text */
+    bottom: 5%;
+    transform: skew(-12deg) rotate(0deg) scale(1.05);
+    background: #58a6ff; /* Brighter Blue */
+    opacity: 1;
+    box-shadow: 0 0 15px #58a6ff;
+  }
+`;
 
 export function HandDrawnHighlight({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <span
-      style={{
-        position: "relative",
-        display: "inline-block",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {children}
-      <Underline viewBox="0 0 200 9" preserveAspectRatio="none">
-        <path d="M2.00025 6.99997C25.7201 5.2046 82.5279 -0.963287 197.999 2.00003" />
-      </Underline>
-    </span>
-  );
+  return <HighlightSpan>{children}</HighlightSpan>;
 }
