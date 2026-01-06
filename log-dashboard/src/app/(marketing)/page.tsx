@@ -2,7 +2,15 @@
 
 import React from "react";
 import styled, { keyframes } from "styled-components";
-import { ArrowRight, Database, Zap, Shield, Cpu, Code } from "lucide-react";
+import {
+  ArrowRight,
+  Database,
+  Zap,
+  Shield,
+  Cpu,
+  Code,
+  Terminal,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
