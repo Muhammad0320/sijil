@@ -36,7 +36,7 @@ func main() {
 	formatPtr := flag.String("format", "regex", "Log format: 'regex' or 'json' ")
 	apiKeyPtr := flag.String("pk", "", "Public API key (pk_live_...)")
 	secretKeyPtr := flag.String("sk", "", "Secret API key (sk_live_...)")
-	urlPtr := flag.String("url", "https://api.sijil.dev/v1/logs", "Sijil Ingest Endpoint")
+	urlPtr := flag.String("url", "https://api.sijil.dev/v1/ingest", "Sijil Ingest Endpoint")
 
 	flag.Parse()
 

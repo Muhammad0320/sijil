@@ -35,7 +35,7 @@ func DefaultConfig(key, secret string) Config {
 	return Config{
 		APIKey:    key,
 		APISecret: secret,
-		Endpoint:  "https://api.sijil.dev/v1/logs",
+		Endpoint:  "https://api.sijil.dev/v1/ingest",
 		FlushTime: 1 * time.Second,
 	}
 }

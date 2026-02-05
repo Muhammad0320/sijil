@@ -6,7 +6,7 @@ import requests
 from datetime import datetime, timezone
 import sys
 
-ENDPOINT = "https://api.sijil.dev/v1/logs";
+ENDPOINT = "https://api.sijil.dev/v1/ingest";
 BATCH_SIZE = 100;
 MAX_QUEUE_SIZE = 4096;
 WORKER_COUNT = 3;
