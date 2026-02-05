@@ -35,7 +35,7 @@ func DefaultConfig(key, secret string) Config {
 	return Config{
 		APIKey:    key,
 		APISecret: secret,
-		Endpoint:  "http://localhost:8080/api/v1/logs",
+		Endpoint:  "https://api.sijil.dev/v1/logs",
 		FlushTime: 1 * time.Second,
 	}
 }
@@ -66,7 +66,7 @@ func NewClient(cfg Config) *Client {
 	}
 
 	if cfg.Endpoint == "" {
-		cfg.Endpoint = "http://localhost:8080/api/v1/logs"
+		cfg.Endpoint = "https://api.sijil.dev/v1/logs"
 	}
 
 	if cfg.FlushTime == 0 || cfg.FlushTime < 250*time.Millisecond {

@@ -3,10 +3,10 @@ import queue
 import time
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 import sys
 
-ENDPOINT = "http://localhost:8080/api/v1/logs";
+ENDPOINT = "https://api.sijil.dev/v1/logs";
 BATCH_SIZE = 100;
 MAX_QUEUE_SIZE = 4096;
 WORKER_COUNT = 3;
@@ -47,8 +47,8 @@ class SijilLogger:
         entry = {
             "level": level,
             "message": msg,
-            "service": self.service_name,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "service": self.service,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "data": data or {}
         }
         try:

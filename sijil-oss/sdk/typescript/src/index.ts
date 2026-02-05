@@ -1,4 +1,4 @@
-const ENDPOINT = "http://localhost:8080/api/v1/logs";
+const ENDPOINT = "https://api.sijil.dev/v1/logs";
 const BATCH_SIZE = 100;
 const MAX_RETRIES = 3;
 const MAX_QUEUE_SIZE = 4096;
