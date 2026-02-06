@@ -41,7 +41,7 @@ export class SijilLogger {
       throw new Error("Sijil: Credentials Missing!");
     }
 
-    this.serviceName = config.service || "service";
+    this.serviceName = config.service || "default";
     this.config = {
       apiKey: config.apiKey,
       apiSecret: config.apiSecret,
@@ -82,6 +82,7 @@ export class SijilLogger {
 
     this.queue.push({
       level,
+      service: this.serviceName,
       message,
       data: data || {},
       timestamp: new Date().toISOString(),
