@@ -1,0 +1,20 @@
+{
+  "name": "@sijil/node",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "description": "The Paranoid Log Engine SDK for Node.js",
+  "keywords": [
+    "logging",
+    "sijil",
+    "observability"
+  ],
+  "author": "Sijil",
+  "license": "MIT"
+}
