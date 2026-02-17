@@ -12,6 +12,7 @@
   "description": "The Paranoid Log Engine SDK for Node.js",
   "keywords": [
     "logging",
+    "paranoid",
     "sijil",
     "observability"
   ],
