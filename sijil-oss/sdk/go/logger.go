@@ -29,6 +29,7 @@ type Config struct {
 
 	// The Tuning knob
 	FlushTime time.Duration
+	Silent    bool
 }
 
 // For lazy devs (myself included)
@@ -59,6 +60,8 @@ type Client struct {
 	isClosed bool
 	mu       sync.Mutex
 	service  string
+
+	flushSig chan chan struct{}
 }
 
 func NewClient(cfg Config) *Client {
@@ -86,6 +89,7 @@ func NewClient(cfg Config) *Client {
 		client:   &http.Client{Timeout: 5 * time.Second},
 		shutdown: make(chan struct{}),
 		service:  svc, // can be overridden perlog or global
+		flushSig: make(chan chan struct{}),
 	}
 
 	for i := range workerCount {
@@ -138,6 +142,41 @@ func (c *Client) push(level, msg string, data map[string]interface{}) {
 	}
 }
 
+func (c *Client) Flush() {
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Drain the channel buffer into the workers. Look uptil the channel is empty
+	timeout := time.After(2 * time.Second)
+	for len(c.queue) > 0 {
+
+		select {
+
+		case <-timeout:
+			if !c.config.Silent {
+				fmt.Println("Sijil: Flush timeout waiting for queue drain")
+			}
+			return
+		default:
+			time.Sleep(10 * time.Millisecond) // Tiny sleep to allow workers to pick up
+		}
+
+	}
+
+	// 2. Forcr workers to flush their internal bufferss.
+	ack := make(chan struct{})
+	for range workerCount {
+		c.flushSig <- ack
+	}
+
+	// 3. Wait for all workers to acknowledge.
+	for range workerCount {
+		<-ack
+	}
+
+}
+
 func (c *Client) Close() {
 	c.mu.Lock()
 	if c.isClosed {
@@ -174,7 +213,11 @@ func (c *Client) sendWithRetry(logs []LogEntry) {
 
 		// Network Error (DNS, timeout) -> Retry
 		if err != nil {
-			fmt.Printf("Sijil SDK Error: Failed to send batch: %v\n", err)
+
+			if !c.config.Silent {
+				fmt.Printf("Sijil SDK Error: Failed to send batch: %v\n", err)
+			}
+
 			continue
 		}
 		defer res.Body.Close()
@@ -186,13 +229,17 @@ func (c *Client) sendWithRetry(logs []LogEntry) {
 
 		// Server error -> Retry
 		if res.StatusCode >= 500 {
-			fmt.Printf("Sijil SDK Error: Server error %d (attempt %d)\n", res.StatusCode, attempts+1)
+			if !c.config.Silent {
+				fmt.Printf("Sijil SDK Error: Server error %d (attempt %d)\n", res.StatusCode, attempts+1)
+			}
 			continue
 		}
 
 		// Client error -> DO NOT retry (it will never succeed)
 		if res.StatusCode >= 400 {
-			fmt.Printf("Sijil: Rejected %d (Bad Config/Auth). Dropping batch.\n", res.StatusCode)
+			if !c.config.Silent {
+				fmt.Printf("Sijil: Rejected %d (Bad Config/Auth). Dropping batch.\n", res.StatusCode)
+			}
 			return
 		}
 
@@ -234,6 +281,10 @@ func (c *Client) worker(_ int) {
 			}
 		case <-ticker.C:
 			flush()
+
+		case ack := <-c.flushSig:
+			flush()
+			ack <- struct{}{} // Signal back I'm empty
 
 		}
 	}

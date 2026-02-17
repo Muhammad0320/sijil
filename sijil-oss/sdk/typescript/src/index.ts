@@ -10,6 +10,7 @@ interface Config {
   endpoint?: string;
   flushInterval?: number;
   service?: string;
+  silent?: boolean;
 }
 
 interface LogEntry {
