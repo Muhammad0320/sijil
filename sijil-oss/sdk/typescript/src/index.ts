@@ -22,12 +22,9 @@ interface LogEntry {
 }
 
 export class SijilLogger {
-  private config: {
-    apiKey: string;
-    apiSecret: string;
-    endpoint: string;
-    flushInterval: number;
-  };
+  private config: Required<
+    Pick<Config, "apiKey" | "apiSecret" | "endpoint" | "flushInterval">
+  > & { service: string; silent: boolean };
 
   private queue: LogEntry[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -48,9 +45,33 @@ export class SijilLogger {
       apiSecret: config.apiSecret,
       endpoint: config.endpoint || ENDPOINT,
       flushInterval: Math.max(config.flushInterval || 1000, 250),
+      service: config.service || "default",
+      silent: config.silent || false,
     };
 
+    // Deterministic Timer
     this.timer = setInterval(() => this.flush(), this.config.flushInterval);
+
+    // Crash protection
+    this.setupCrashHandler();
+  }
+
+  private setupCrashHandler() {
+    // Flush on manual exit
+    process.on("beforeExit", async () => await this.flush());
+
+    // Flush on Crash (Best Effort)
+    process.on("uncaughtException", async (err) => {
+      if (!this.config.silent)
+        console.error("⚠️ App Crashed! Sijil flushing logs...", err);
+      // We push the crash reason itself
+      this.critical("Application Crashed", {
+        error: err.message,
+        stack: err.stack,
+      });
+      await this.flush();
+      process.exit(1);
+    });
   }
 
   public setService(name: string) {
@@ -104,7 +125,7 @@ export class SijilLogger {
     try {
       await this.sendWithRetry(batch);
     } catch (error) {
-      console.error("Sijil Delivery failed:", error);
+      if (!this.config.silent) console.error("Sijil Delivery failed:", error);
     } finally {
       this.activeWorkers--;
     }
@@ -124,7 +145,8 @@ export class SijilLogger {
 
       if (!res.ok) {
         if (res.status >= 400 && res.status < 500) {
-          console.error(`Sijil Rejected: ${res.status}`);
+          if (!this.config.silent)
+            console.error(`Sijil Rejected: ${res.status}`);
           return;
         }
         if (res.status >= 500) throw new Error(`Server Error ${res.status}`);
@@ -135,7 +157,8 @@ export class SijilLogger {
         await new Promise((r) => setTimeout(r, 100 * Math.pow(2, attempt)));
         return this.sendWithRetry(batch, attempt + 1);
       }
-      throw error;
+
+      if (!this.config.silent) console.error("Sijil Dropped Batch: ", error);
     }
   }
 
